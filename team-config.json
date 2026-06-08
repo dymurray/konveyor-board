@@ -1,0 +1,169 @@
+{
+  "team_name": "Migration Toolkit for Applications",
+  "report_title": "Migration Toolkit for Applications  - Weekly Report",
+  "jira": {
+    "cloud_id": "redhat.atlassian.net",
+    "team_filter_id": "91323",
+    "base_url": "https://redhat.atlassian.net/browse",
+    "projects": [
+      "Migration Toolkit for Applications"
+    ]
+  },
+  "products": [
+    {
+      "key": "MTA",
+      "name": "Migration Toolkit for Applications",
+      "jira_prefixes": ["MTA"],
+      "repos": [
+        "konveyor/tackle2-ui",
+        "konveyor/operator",
+        "konveyor/tackle2-hub",
+        "konveyor/analyzer-lsp",
+        "konveyor/kantra",
+        "konveyor/rulesets",
+        "konveyor/editor-extensions",
+        "konveyor/kai",
+        "konveyor/tackle2-addon-analyzer",
+        "konveyor/tackle2-addon-platform",
+        "konveyor/c-sharp-analyzer-provider",
+        "konveyor/tackle2-addon-discovery",
+        "konveyor/enhancements",
+        "konveyor/release-tools",
+        "konveyor/ci"
+      ]
+    },
+    {
+      "key": "MTA",
+      "name": "Migration Toolkit for Applications",
+      "jira_prefixes": ["MTA"],
+      "repos": [
+        "konveyor/tackle2-ui",
+        "konveyor/enhancements",
+        "konveyor/release-tools",
+        "konveyor/ci"
+      ]
+    }
+  ],
+  "engineers": [
+    {
+      "name": "Emily McMullan",
+      "directory": "emily-mcmullan",
+      "github": "eemcmullan",
+      "jira_account_id": "712020:31c237fc-b6d6-44b0-9461-e06cbac79b9a",
+      "jira_display_names": ["Emily McMullan"],
+      "role": "dev"
+    },
+    {
+      "name": "Pranav Gaikwad",
+      "directory": "pranav-gaikwad",
+      "github": "pranavgaikwad",
+      "jira_account_id": "70121:2ca184da-0bd2-48f2-91f4-e7cfd10fe23d",
+      "jira_display_names": ["Pranav Gaikwad"],
+      "role": "dev"
+    },
+    {
+      "name": "Fabian von Feilitzsch",
+      "directory": "fabian-von-feilitzsch",
+      "github": "fabianvf",
+      "jira_account_id": "712020:3370300c-f5b5-404a-b769-2695aab6274e",
+      "jira_display_names": ["Fabian von Feilitzsch"],
+      "role": "dev"
+    },
+    {
+      "name": "Shveta Sachdeva",
+      "directory": "shveta-sachdeva",
+      "github": "sshveta",
+      "jira_account_id": "70121:3b39ae71-d9a8-40d7-bb9c-1cb4c1a7ef0c",
+      "jira_display_names": ["Shveta Sachdeva"],
+      "role": "dev"
+    },
+    {
+      "name": "Juan Manuel Leflet Estrada",
+      "directory": "juan-manuel-leflet-estrada",
+      "github": "jmle",
+      "jira_account_id": "712020:bcaab201-7708-4123-a6ca-cea84e9ceeab",
+      "jira_display_names": ["Juanma Leflet Estrada"],
+      "role": "dev"
+    },
+    {
+      "name": "Savitha Raghunathan",
+      "directory": "savitha-raghunathan",
+      "github": "savitharaghunathan",
+      "jira_account_id": "712020:6173173b-be81-451c-b341-5dc5eb860d68",
+      "jira_display_names": ["Savitha Raghunathan"],
+      "role": "dev"
+    },
+    {
+      "name": "Ian Bolton",
+      "directory": "ian-bolton",
+      "github": "ibolton336",
+      "jira_account_id": "70121:b4421d8e-14c3-4430-bd8e-30b46a985671",
+      "jira_display_names": ["Ian Bolton"],
+      "role": "dev"
+    },
+    {
+      "name": "Igor Braginsky",
+      "directory": "igor-braginsky",
+      "github": "ibragins",
+      "jira_account_id": "712020:2ca6c321-d5b8-46df-88b2-648a243ae08a",
+      "jira_display_names": ["Igor Braginsky"],
+      "role": "dev"
+    },
+    {
+      "name": "David Zager",
+      "directory": "david-zager",
+      "github": "djzager",
+      "jira_account_id": "70121:d9c8bb64-cd2f-4c9d-a9a8-124289aa7601",
+      "jira_display_names": ["David Zager"],
+      "role": "dev"
+    },
+    {
+      "name": "Jeff Ortel",
+      "directory": "jeff-ortel",
+      "github": "jortel",
+      "jira_account_id": "70121:5f816ce5-4628-4c92-8864-64498437aadd",
+      "jira_display_names": ["Jeff Ortel"],
+      "role": "dev"
+    },
+    {
+      "name": "Shawn Hurley",
+      "directory": "shawn-hurley",
+      "github": "shawn-hurley",
+      "jira_account_id": "70121:e47f7395-7d95-43f1-90b3-99b74335e690",
+      "jira_display_names": ["Shawn Hurley"],
+      "role": "dev"
+    },
+    {
+      "name": "Nandini Chandra",
+      "directory": "nandini-chandra",
+      "github": "nachandr",
+      "jira_account_id": "70121:f5064dcb-302e-457e-bfd9-1ad85d4ea1dd",
+      "jira_display_names": ["Nandini Chandra"],
+      "role": "dev"
+    },
+    {
+      "name": "Maayan Hadasi",
+      "directory": "maayan-hadasi",
+      "github": "mguetta1",
+      "jira_account_id": "712020:d3f4b06b-bf31-44eb-8c27-0c2c61f1ec4d",
+      "jira_display_names": ["Maayan Hadasi"],
+      "role": "dev"
+    },
+    {
+      "name": "Alejandro Brugarolas",
+      "directory": "alejandro-brugarolas",
+      "github": "abrugaro",
+      "jira_account_id": "712020:fbeb0f13-f062-4840-b2bf-d5f8c83372e3",
+      "jira_display_names": ["Alejandro Brugarolas"],
+      "role": "dev"
+    },
+    {
+      "name": "Dylan Murray",
+      "directory": "dylan-murray",
+      "github": "dymurray",
+      "jira_account_id": "70121:f490152e-7b1d-41ce-8280-98f1a81f4f61",
+      "jira_display_names": ["Dylan Murray"],
+      "role": "dev"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "konveyor-board-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "cookie-parser": "^1.4.7",
+    "node-cache": "^5.1.2",
+    "@octokit/graphql": "^8.2.1",
+    "@octokit/rest": "^21.1.1",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/cookie-parser": "^1.4.8",
+    "tsx": "^4.19.0",
+    "vitest": "^3.2.1"
+  }
+}

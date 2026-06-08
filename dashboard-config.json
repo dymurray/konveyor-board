@@ -1,0 +1,13 @@
+{
+  "github": {
+    "org": "konveyor",
+    "projectNumber": 67
+  },
+  "polling": {
+    "intervalMs": 30000,
+    "cacheTtlMs": 60000
+  },
+  "oauth": {
+    "callbackUrl": "http://localhost:3001/api/auth/callback"
+  }
+}
