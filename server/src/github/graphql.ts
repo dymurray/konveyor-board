@@ -39,6 +39,7 @@ const PROJECT_QUERY = `
                 repository { name, owner { login } }
                 assignees(first: 10) { nodes { login, avatarUrl } }
                 labels(first: 10) { nodes { name, color } }
+                milestone { title }
                 createdAt, updatedAt
               }
               ... on PullRequest {

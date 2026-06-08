@@ -11,9 +11,11 @@ interface SidebarProps {
   availableRepos: string[];
   availableAssignees: string[];
   availableLabels: string[];
+  availableMilestones: string[];
   onRepoFilter: (repos: string[]) => void;
   onAssigneeFilter: (assignees: string[]) => void;
   onLabelFilter: (labels: string[]) => void;
+  onMilestoneFilter: (milestones: string[]) => void;
   onClearFilters: () => void;
   team: TeamMember[];
   secondsUntilRefresh: number;
@@ -33,15 +35,17 @@ export function Sidebar({
   availableRepos,
   availableAssignees,
   availableLabels,
+  availableMilestones,
   onRepoFilter,
   onAssigneeFilter,
   onLabelFilter,
+  onMilestoneFilter,
   onClearFilters,
   team,
   secondsUntilRefresh,
   onRefresh,
 }: SidebarProps) {
-  const hasFilters = filters.repos.length > 0 || filters.assignees.length > 0 || filters.labels.length > 0;
+  const hasFilters = filters.repos.length > 0 || filters.assignees.length > 0 || filters.labels.length > 0 || filters.milestones.length > 0;
 
   return (
     <aside
@@ -94,6 +98,7 @@ export function Sidebar({
           <FilterDropdown label="Repo" options={availableRepos} selected={filters.repos} onChange={onRepoFilter} />
           <FilterDropdown label="Assignee" options={availableAssignees} selected={filters.assignees} onChange={onAssigneeFilter} />
           <FilterDropdown label="Label" options={availableLabels} selected={filters.labels} onChange={onLabelFilter} />
+          <FilterDropdown label="Milestone" options={availableMilestones} selected={filters.milestones} onChange={onMilestoneFilter} />
         </div>
         {hasFilters && (
           <button

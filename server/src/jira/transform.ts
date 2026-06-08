@@ -11,5 +11,6 @@ export function transformJiraIssues(issues: any[], baseUrl: string): JiraTicket[
     url: `${baseUrl}/${issue.key}`,
     updatedAt: issue.fields.updated,
     createdAt: issue.fields.created,
+    fixVersion: issue.fields.fixVersions?.[0]?.name ?? "",
   }));
 }

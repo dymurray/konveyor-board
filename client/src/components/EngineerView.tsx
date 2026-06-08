@@ -10,8 +10,11 @@ interface EngineerViewProps {
 
 const STATUS_ORDER = ["In Progress", "In Review", "Backlog"];
 
+type SourceFilter = "both" | "github" | "jira";
+
 export function EngineerView({ items, team, jiraTickets, onSelectItem }: EngineerViewProps) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("both");
 
   const byEngineer = useMemo(() => {
     const ghMap = new Map<string, ProjectItem[]>();
@@ -102,11 +105,28 @@ export function EngineerView({ items, team, jiraTickets, onSelectItem }: Enginee
               onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--accent-blue)")}
               onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
             >
-              <span style={{ color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "70%" }}>
+              <span style={{ color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "60%" }}>
                 {item.title}
               </span>
-              <span style={{ color: "var(--text-muted)", fontSize: 10, whiteSpace: "nowrap" }}>
-                {item.repo} #{item.number}
+              <span style={{ display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
+                {item.milestone && (
+                  <span style={{ padding: "1px 5px", background: "#8b949e22", color: "var(--text-secondary)", borderRadius: 3, fontSize: 9 }}>
+                    {item.milestone}
+                  </span>
+                )}
+                <span style={{
+                  padding: "1px 6px",
+                  borderRadius: 3,
+                  fontSize: 9,
+                  fontWeight: 600,
+                  background: item.status === "In Progress" ? "#23863622" : item.status === "In Review" ? "#1f6feb22" : "#8b949e22",
+                  color: item.status === "In Progress" ? "var(--accent-green)" : item.status === "In Review" ? "var(--accent-blue)" : "var(--text-secondary)",
+                }}>
+                  {item.status}
+                </span>
+                <span style={{ color: "var(--text-muted)", fontSize: 10 }}>
+                  {item.repo} #{item.number}
+                </span>
               </span>
             </div>
           ))}
@@ -161,6 +181,11 @@ export function EngineerView({ items, team, jiraTickets, onSelectItem }: Enginee
               </span>
             </span>
             <span style={{ display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
+              {ticket.fixVersion && (
+                <span style={{ padding: "1px 5px", background: "#4c9aff22", color: "#4c9aff", borderRadius: 3, fontSize: 9 }}>
+                  {ticket.fixVersion}
+                </span>
+              )}
               <span style={{ color: "var(--text-secondary)", fontSize: 10 }}>{ticket.status}</span>
               <span style={{ color: "#4c9aff", fontSize: 10, fontWeight: 500 }}>{ticket.key}</span>
             </span>
@@ -172,13 +197,37 @@ export function EngineerView({ items, team, jiraTickets, onSelectItem }: Enginee
 
   return (
     <div style={{ padding: 16, maxWidth: 800 }}>
-      <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 16 }}>
-        Engineer View
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>
+          Engineer View
+        </div>
+        <div style={{ display: "flex", gap: 2, background: "var(--bg-tertiary)", borderRadius: 6, padding: 2 }}>
+          {(["both", "github", "jira"] as const).map((opt) => (
+            <button
+              key={opt}
+              onClick={() => setSourceFilter(opt)}
+              style={{
+                padding: "4px 12px",
+                border: "none",
+                borderRadius: 4,
+                fontSize: 11,
+                fontWeight: 500,
+                cursor: "pointer",
+                background: sourceFilter === opt ? "var(--bg-secondary)" : "transparent",
+                color: sourceFilter === opt
+                  ? (opt === "jira" ? "#4c9aff" : opt === "github" ? "var(--accent-green)" : "var(--text-primary)")
+                  : "var(--text-muted)",
+              }}
+            >
+              {opt === "both" ? "All" : opt === "github" ? "GitHub" : "JIRA"}
+            </button>
+          ))}
+        </div>
       </div>
 
       {team.map((member) => {
-        const memberItems = byEngineer.ghMap.get(member.github) ?? [];
-        const memberJira = byEngineer.jiraMap.get(member.jira_account_id) ?? [];
+        const memberItems = sourceFilter !== "jira" ? (byEngineer.ghMap.get(member.github) ?? []) : [];
+        const memberJira = sourceFilter !== "github" ? (byEngineer.jiraMap.get(member.jira_account_id) ?? []) : [];
         const totalItems = memberItems.length + memberJira.length;
         const isCollapsed = collapsed.has(member.github);
 
@@ -225,7 +274,7 @@ export function EngineerView({ items, team, jiraTickets, onSelectItem }: Enginee
         );
       })}
 
-      {byEngineer.unassigned.length > 0 && (
+      {sourceFilter !== "jira" && byEngineer.unassigned.length > 0 && (
         <div style={{ marginBottom: 16, background: "var(--bg-secondary)", borderRadius: 8, border: "1px solid var(--border)", overflow: "hidden" }}>
           <div
             onClick={() => toggle("__unassigned__")}

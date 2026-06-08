@@ -30,9 +30,11 @@ export function Shell() {
     availableRepos,
     availableAssignees,
     availableLabels,
+    availableMilestones,
     setRepoFilter,
     setAssigneeFilter,
     setLabelFilter,
+    setMilestoneFilter,
     clearFilters,
   } = useFilters(items);
 
@@ -71,9 +73,11 @@ export function Shell() {
         availableRepos={availableRepos}
         availableAssignees={availableAssignees}
         availableLabels={availableLabels}
+        availableMilestones={availableMilestones}
         onRepoFilter={setRepoFilter}
         onAssigneeFilter={setAssigneeFilter}
         onLabelFilter={setLabelFilter}
+        onMilestoneFilter={setMilestoneFilter}
         onClearFilters={clearFilters}
         team={team}
         secondsUntilRefresh={secondsUntilRefresh}

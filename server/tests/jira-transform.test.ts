@@ -12,6 +12,7 @@ const mockIssues = [
       assignee: { accountId: "70121:f490152e-7b1d-41ce-8280-98f1a81f4f61" },
       updated: "2026-06-07T10:00:00.000+0000",
       created: "2026-06-01T08:00:00.000+0000",
+      fixVersions: [{ name: "MTA-7.2.0" }],
     },
   },
   {
@@ -24,6 +25,7 @@ const mockIssues = [
       assignee: null,
       updated: "2026-06-06T14:00:00.000+0000",
       created: "2026-05-20T09:00:00.000+0000",
+      fixVersions: [],
     },
   },
 ];
@@ -42,11 +44,13 @@ describe("transformJiraIssues", () => {
       url: "https://redhat.atlassian.net/browse/MTA-1234",
       updatedAt: "2026-06-07T10:00:00.000+0000",
       createdAt: "2026-06-01T08:00:00.000+0000",
+      fixVersion: "MTA-7.2.0",
     });
   });
 
   it("handles null assignee", () => {
     const tickets = transformJiraIssues(mockIssues, "https://redhat.atlassian.net/browse");
     expect(tickets[1].assigneeId).toBe("");
+    expect(tickets[1].fixVersion).toBe("");
   });
 });

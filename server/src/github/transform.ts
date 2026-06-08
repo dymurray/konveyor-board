@@ -36,6 +36,7 @@ export function transformProjectItems(nodes: any[]): ProjectItem[] {
       })),
       createdAt: content.createdAt,
       updatedAt: content.updatedAt,
+      milestone: content.milestone?.title ?? "",
     });
   }
 

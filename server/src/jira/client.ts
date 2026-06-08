@@ -16,19 +16,20 @@ export async function fetchJiraTickets(accountIds: string[]): Promise<JiraTicket
   }
 
   const quotedIds = accountIds.map((id) => `"${id}"`).join(", ");
-  const jql = `assignee in (${quotedIds}) AND project = "MTA" AND resolution is EMPTY ORDER BY updated DESC`;
+  const jql = `assignee in (${quotedIds}) AND project = "MTA" AND resolution is EMPTY AND status not in ("Verified", "Closed") ORDER BY updated DESC`;
 
-  const params = new URLSearchParams({
-    jql,
-    maxResults: "200",
-    fields: "summary,status,priority,issuetype,assignee,updated,created",
-  });
-
-  const res = await fetch(`${JIRA_API}/search?${params.toString()}`, {
+  const res = await fetch(`${JIRA_API}/search/jql`, {
+    method: "POST",
     headers: {
       Authorization: getAuthHeader(),
       Accept: "application/json",
+      "Content-Type": "application/json",
     },
+    body: JSON.stringify({
+      jql,
+      maxResults: 200,
+      fields: ["summary", "status", "priority", "issuetype", "assignee", "updated", "created", "fixVersions"],
+    }),
   });
 
   if (!res.ok) {

@@ -14,6 +14,7 @@ export interface ProjectItem {
   labels: Label[];
   createdAt: string;
   updatedAt: string;
+  milestone: string;
 }
 
 export interface Assignee {
@@ -56,4 +57,5 @@ export interface JiraTicket {
   url: string;
   updatedAt: string;
   createdAt: string;
+  fixVersion: string;
 }

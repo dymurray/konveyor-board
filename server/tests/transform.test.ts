@@ -46,6 +46,7 @@ const mockGraphQLResponse = {
           labels: {
             nodes: [{ name: "enhancement", color: "1f6feb" }],
           },
+          milestone: { title: "v7.2.0" },
           createdAt: "2026-01-15T10:00:00Z",
           updatedAt: "2026-06-01T14:30:00Z",
         },
@@ -84,6 +85,7 @@ describe("transformProjectItems", () => {
       labels: [{ name: "enhancement", color: "1f6feb" }],
       createdAt: "2026-01-15T10:00:00Z",
       updatedAt: "2026-06-01T14:30:00Z",
+      milestone: "v7.2.0",
     });
   });
 
@@ -103,6 +105,7 @@ describe("transformProjectItems", () => {
           repository: { name: "hub", owner: { login: "konveyor" } },
           assignees: { nodes: [] },
           labels: { nodes: [] },
+          milestone: null,
           createdAt: "2026-01-01T00:00:00Z",
           updatedAt: "2026-01-01T00:00:00Z",
         },
@@ -111,6 +114,7 @@ describe("transformProjectItems", () => {
     const items = transformProjectItems(noStatusNodes);
     expect(items[0].status).toBe("");
     expect(items[0].statusOptionId).toBe("");
+    expect(items[0].milestone).toBe("");
   });
 });
 

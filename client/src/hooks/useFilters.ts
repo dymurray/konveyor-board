@@ -5,10 +5,11 @@ export interface Filters {
   repos: string[];
   assignees: string[];
   labels: string[];
+  milestones: string[];
 }
 
 export function useFilters(items: ProjectItem[]) {
-  const [filters, setFilters] = useState<Filters>({ repos: [], assignees: [], labels: [] });
+  const [filters, setFilters] = useState<Filters>({ repos: [], assignees: [], labels: [], milestones: [] });
 
   const availableRepos = useMemo(() => [...new Set(items.map((i) => i.repo))].sort(), [items]);
   const availableAssignees = useMemo(
@@ -19,6 +20,10 @@ export function useFilters(items: ProjectItem[]) {
     () => [...new Set(items.flatMap((i) => i.labels.map((l) => l.name)))].sort(),
     [items],
   );
+  const availableMilestones = useMemo(
+    () => [...new Set(items.map((i) => i.milestone).filter((m) => m.length > 0))].sort(),
+    [items],
+  );
 
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
@@ -26,6 +31,7 @@ export function useFilters(items: ProjectItem[]) {
       if (filters.assignees.length > 0 && !item.assignees.some((a) => filters.assignees.includes(a.login)))
         return false;
       if (filters.labels.length > 0 && !item.labels.some((l) => filters.labels.includes(l.name))) return false;
+      if (filters.milestones.length > 0 && !filters.milestones.includes(item.milestone)) return false;
       return true;
     });
   }, [items, filters]);
@@ -33,7 +39,8 @@ export function useFilters(items: ProjectItem[]) {
   const setRepoFilter = useCallback((repos: string[]) => setFilters((f) => ({ ...f, repos })), []);
   const setAssigneeFilter = useCallback((assignees: string[]) => setFilters((f) => ({ ...f, assignees })), []);
   const setLabelFilter = useCallback((labels: string[]) => setFilters((f) => ({ ...f, labels })), []);
-  const clearFilters = useCallback(() => setFilters({ repos: [], assignees: [], labels: [] }), []);
+  const setMilestoneFilter = useCallback((milestones: string[]) => setFilters((f) => ({ ...f, milestones })), []);
+  const clearFilters = useCallback(() => setFilters({ repos: [], assignees: [], labels: [], milestones: [] }), []);
 
   return {
     filters,
@@ -41,9 +48,11 @@ export function useFilters(items: ProjectItem[]) {
     availableRepos,
     availableAssignees,
     availableLabels,
+    availableMilestones,
     setRepoFilter,
     setAssigneeFilter,
     setLabelFilter,
+    setMilestoneFilter,
     clearFilters,
   };
 }
