@@ -1,4 +1,4 @@
-import type { ProjectItem, ProjectColumn, Label, TeamMember, AuthUser } from "../types/project";
+import type { ProjectItem, ProjectColumn, Label, TeamMember, AuthUser, JiraTicket } from "../types/project";
 
 class ApiError extends Error {
   constructor(
@@ -66,4 +66,6 @@ export const api = {
   getMe: () => request<AuthUser>("/api/auth/me"),
 
   logout: () => request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
+
+  getJiraTickets: () => request<JiraTicket[]>("/api/jira/tickets"),
 };

@@ -36,6 +36,7 @@ export interface ProjectColumn {
 export interface TeamMember {
   name: string;
   github: string;
+  jira_account_id: string;
   role: string;
 }
 
@@ -43,4 +44,16 @@ export interface AuthUser {
   login: string;
   avatarUrl: string;
   name: string;
+}
+
+export interface JiraTicket {
+  key: string;
+  summary: string;
+  status: string;
+  priority: string;
+  issueType: string;
+  assigneeId: string;
+  url: string;
+  updatedAt: string;
+  createdAt: string;
 }

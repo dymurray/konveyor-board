@@ -45,7 +45,7 @@ authRouter.get("/callback", async (req, res) => {
     sameSite: "lax",
     maxAge: 8 * 60 * 60 * 1000,
   });
-  res.redirect("/");
+  res.redirect("http://localhost:3000/");
 });
 
 authRouter.get("/me", async (req, res) => {

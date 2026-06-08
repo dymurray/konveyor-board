@@ -23,6 +23,7 @@ export function projectRouter(cache: AppCache): Router {
       cache.set(`project:${projectNumber}:fields`, columns, 300);
       res.json({ projectNodeId, items });
     } catch (err) {
+      console.error("GET /project/:id/items error:", err);
       res.status(502).json({ error: `GitHub API error: ${String(err)}` });
     }
   });

@@ -9,6 +9,7 @@ import { useProjectItems } from "../hooks/useProjectItems";
 import { useProjectColumns } from "../hooks/useProjectColumns";
 import { useFilters } from "../hooks/useFilters";
 import { useUpdateItem } from "../hooks/useUpdateItem";
+import { useJiraTickets } from "../hooks/useJiraTickets";
 import { api } from "../api/client";
 import type { ProjectItem, TeamMember } from "../types/project";
 
@@ -22,6 +23,7 @@ export function Shell() {
 
   const { items, setItems, projectNodeId, loading, secondsUntilRefresh, refresh } = useProjectItems(PROJECT_ID, POLL_INTERVAL);
   const { columns } = useProjectColumns(PROJECT_ID);
+  const { tickets: jiraTickets } = useJiraTickets(POLL_INTERVAL);
   const {
     filters,
     filteredItems,
@@ -82,7 +84,7 @@ export function Shell() {
           <BoardView items={filteredItems} columns={columns} projectNodeId={projectNodeId} onSelectItem={handleSelectItem} onMoveCard={moveCard} />
         )}
         {view === "list" && <ListView items={filteredItems} columns={columns} onSelectItem={handleSelectItem} />}
-        {view === "engineer" && <EngineerView items={filteredItems} team={team} onSelectItem={handleSelectItem} />}
+        {view === "engineer" && <EngineerView items={filteredItems} team={team} jiraTickets={jiraTickets} onSelectItem={handleSelectItem} />}
       </main>
       {selectedItem && (
         <DetailPanel

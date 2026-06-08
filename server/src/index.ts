@@ -6,6 +6,7 @@ import { authRouter } from "./auth/router.ts";
 import { projectRouter } from "./routes/project.ts";
 import { issuesRouter } from "./routes/issues.ts";
 import { teamRouter } from "./routes/team.ts";
+import { jiraRouter } from "./routes/jira.ts";
 
 const app = express();
 const cache = new AppCache({ stdTTL: dashboardConfig.polling.cacheTtlMs / 1000 });
@@ -17,6 +18,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/project", projectRouter(cache));
 app.use("/api", issuesRouter(cache));
 app.use("/api/team", teamRouter);
+app.use("/api/jira", jiraRouter(cache));
 
 app.listen(env.port, () => {
   console.log(`Server running on http://localhost:${env.port}`);

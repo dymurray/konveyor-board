@@ -1,38 +1,52 @@
 import { useState, useMemo } from "react";
-import type { ProjectItem, TeamMember } from "../types/project";
+import type { ProjectItem, TeamMember, JiraTicket } from "../types/project";
 
 interface EngineerViewProps {
   items: ProjectItem[];
   team: TeamMember[];
+  jiraTickets: JiraTicket[];
   onSelectItem: (item: ProjectItem) => void;
 }
 
 const STATUS_ORDER = ["In Progress", "In Review", "Backlog"];
 
-export function EngineerView({ items, team, onSelectItem }: EngineerViewProps) {
+export function EngineerView({ items, team, jiraTickets, onSelectItem }: EngineerViewProps) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   const byEngineer = useMemo(() => {
-    const map = new Map<string, ProjectItem[]>();
+    const ghMap = new Map<string, ProjectItem[]>();
+    const jiraMap = new Map<string, JiraTicket[]>();
     for (const member of team) {
-      map.set(member.github, []);
+      ghMap.set(member.github, []);
+      jiraMap.set(member.jira_account_id, []);
     }
     const unassigned: ProjectItem[] = [];
 
     for (const item of items) {
+      if (item.state === "CLOSED" || item.status.toLowerCase() === "done") {
+        continue;
+      }
       if (item.assignees.length === 0) {
         unassigned.push(item);
       } else {
         for (const assignee of item.assignees) {
-          const list = map.get(assignee.login);
+          const list = ghMap.get(assignee.login);
           if (list) {
             list.push(item);
           }
         }
       }
     }
-    return { map, unassigned };
-  }, [items, team]);
+
+    for (const ticket of jiraTickets) {
+      const list = jiraMap.get(ticket.assigneeId);
+      if (list) {
+        list.push(ticket);
+      }
+    }
+
+    return { ghMap, jiraMap, unassigned };
+  }, [items, team, jiraTickets]);
 
   const toggle = (key: string) => {
     setCollapsed((prev) => {
@@ -43,7 +57,7 @@ export function EngineerView({ items, team, onSelectItem }: EngineerViewProps) {
     });
   };
 
-  function renderItems(engineerItems: ProjectItem[]) {
+  function renderGitHubItems(engineerItems: ProjectItem[]) {
     const grouped = new Map<string, ProjectItem[]>();
     for (const status of STATUS_ORDER) {
       grouped.set(status, []);
@@ -100,6 +114,62 @@ export function EngineerView({ items, team, onSelectItem }: EngineerViewProps) {
       ));
   }
 
+  function renderJiraTickets(tickets: JiraTicket[]) {
+    if (tickets.length === 0) return null;
+
+    return (
+      <div style={{ marginTop: 8 }}>
+        <div style={{ fontSize: 11, color: "#4c9aff", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5, display: "flex", alignItems: "center", gap: 4 }}>
+          <span style={{ fontSize: 10 }}>JIRA</span> ({tickets.length})
+        </div>
+        {tickets.map((ticket) => (
+          <a
+            key={ticket.key}
+            href={ticket.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              padding: "6px 10px",
+              background: "var(--bg-primary)",
+              border: "1px solid var(--border)",
+              borderLeft: "3px solid #4c9aff",
+              borderRadius: 4,
+              marginBottom: 4,
+              cursor: "pointer",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              fontSize: 12,
+              textDecoration: "none",
+            }}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: 6, overflow: "hidden", maxWidth: "70%" }}>
+              <span style={{
+                padding: "1px 5px",
+                background: ticket.issueType.toLowerCase() === "bug" ? "#da363322" : "#1f6feb22",
+                color: ticket.issueType.toLowerCase() === "bug" ? "var(--accent-red)" : "#4c9aff",
+                borderRadius: 3,
+                fontSize: 9,
+                fontWeight: 600,
+                textTransform: "uppercase",
+                whiteSpace: "nowrap",
+              }}>
+                {ticket.issueType}
+              </span>
+              <span style={{ color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {ticket.summary}
+              </span>
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
+              <span style={{ color: "var(--text-secondary)", fontSize: 10 }}>{ticket.status}</span>
+              <span style={{ color: "#4c9aff", fontSize: 10, fontWeight: 500 }}>{ticket.key}</span>
+            </span>
+          </a>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div style={{ padding: 16, maxWidth: 800 }}>
       <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 16 }}>
@@ -107,7 +177,9 @@ export function EngineerView({ items, team, onSelectItem }: EngineerViewProps) {
       </div>
 
       {team.map((member) => {
-        const memberItems = byEngineer.map.get(member.github) ?? [];
+        const memberItems = byEngineer.ghMap.get(member.github) ?? [];
+        const memberJira = byEngineer.jiraMap.get(member.jira_account_id) ?? [];
+        const totalItems = memberItems.length + memberJira.length;
         const isCollapsed = collapsed.has(member.github);
 
         return (
@@ -128,16 +200,24 @@ export function EngineerView({ items, team, onSelectItem }: EngineerViewProps) {
                 <span style={{ color: "var(--text-muted)", fontSize: 12, marginLeft: 8 }}>@{member.github}</span>
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{memberItems.length} items</span>
+                <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{totalItems} items</span>
+                {memberJira.length > 0 && (
+                  <span style={{ fontSize: 10, color: "#4c9aff", padding: "1px 5px", background: "#4c9aff22", borderRadius: 3 }}>
+                    {memberJira.length} JIRA
+                  </span>
+                )}
                 <span style={{ color: "var(--text-muted)", fontSize: 10 }}>{isCollapsed ? "▶" : "▼"}</span>
               </div>
             </div>
             {!isCollapsed && (
               <div style={{ padding: "10px 14px" }}>
-                {memberItems.length === 0 ? (
+                {totalItems === 0 ? (
                   <div style={{ fontSize: 12, color: "var(--text-muted)", fontStyle: "italic" }}>No assigned items</div>
                 ) : (
-                  renderItems(memberItems)
+                  <>
+                    {renderGitHubItems(memberItems)}
+                    {renderJiraTickets(memberJira)}
+                  </>
                 )}
               </div>
             )}
@@ -164,7 +244,7 @@ export function EngineerView({ items, team, onSelectItem }: EngineerViewProps) {
             </div>
           </div>
           {!collapsed.has("__unassigned__") && (
-            <div style={{ padding: "10px 14px" }}>{renderItems(byEngineer.unassigned)}</div>
+            <div style={{ padding: "10px 14px" }}>{renderGitHubItems(byEngineer.unassigned)}</div>
           )}
         </div>
       )}

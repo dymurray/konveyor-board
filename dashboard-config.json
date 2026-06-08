@@ -8,6 +8,6 @@
     "cacheTtlMs": 60000
   },
   "oauth": {
-    "callbackUrl": "http://localhost:3001/api/auth/callback"
+    "callbackUrl": "http://localhost:3000/api/auth/callback"
   }
 }

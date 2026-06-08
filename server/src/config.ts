@@ -20,4 +20,6 @@ export const env = {
   githubClientSecret: process.env.GITHUB_OAUTH_CLIENT_SECRET ?? "",
   sessionSecret: process.env.SESSION_SECRET ?? "dev-secret",
   port: parseInt(process.env.PORT ?? "3001", 10),
+  jiraEmail: process.env.JIRA_EMAIL ?? "",
+  jiraApiToken: process.env.JIRA_API_TOKEN ?? "",
 };

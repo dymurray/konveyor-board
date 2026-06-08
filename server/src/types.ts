@@ -67,3 +67,15 @@ export interface DashboardConfig {
     callbackUrl: string;
   };
 }
+
+export interface JiraTicket {
+  key: string;           // e.g. "MTA-1234"
+  summary: string;
+  status: string;        // e.g. "In Progress", "Code Review"
+  priority: string;      // e.g. "Major", "Critical"
+  issueType: string;     // e.g. "Bug", "Story", "Task"
+  assigneeId: string;    // jira_account_id
+  url: string;           // link to JIRA
+  updatedAt: string;
+  createdAt: string;
+}
