@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import type { ProjectItem } from "../types/project";
 
 export interface Filters {
@@ -8,8 +8,24 @@ export interface Filters {
   milestones: string[];
 }
 
-export function useFilters(items: ProjectItem[]) {
-  const [filters, setFilters] = useState<Filters>({ repos: [], assignees: [], labels: [], milestones: [] });
+export function useFilters(items: ProjectItem[], defaultMilestone?: string) {
+  const [filters, setFilters] = useState<Filters>(() => ({
+    repos: [],
+    assignees: [],
+    labels: [],
+    milestones: defaultMilestone ? [defaultMilestone] : [],
+  }));
+
+  useEffect(() => {
+    if (defaultMilestone) {
+      setFilters((f) => {
+        if (f.milestones.length === 0) {
+          return { ...f, milestones: [defaultMilestone] };
+        }
+        return f;
+      });
+    }
+  }, [defaultMilestone]);
 
   const availableRepos = useMemo(() => [...new Set(items.map((i) => i.repo))].sort(), [items]);
   const availableAssignees = useMemo(

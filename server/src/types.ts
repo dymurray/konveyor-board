@@ -67,6 +67,10 @@ export interface DashboardConfig {
   oauth: {
     callbackUrl: string;
   };
+  release?: {
+    githubMilestone: string;
+    jiraFixVersion: string;
+  };
 }
 
 export interface JiraTicket {

@@ -9,5 +9,9 @@
   },
   "oauth": {
     "callbackUrl": "http://localhost:3000/api/auth/callback"
+  },
+  "release": {
+    "githubMilestone": "v0.10.0",
+    "jiraFixVersion": "MTA 8.2.0"
   }
 }

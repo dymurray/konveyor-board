@@ -7,6 +7,7 @@ import { projectRouter } from "./routes/project.ts";
 import { issuesRouter } from "./routes/issues.ts";
 import { teamRouter } from "./routes/team.ts";
 import { jiraRouter } from "./routes/jira.ts";
+import { configRouter } from "./routes/config.ts";
 
 const app = express();
 const cache = new AppCache({ stdTTL: dashboardConfig.polling.cacheTtlMs / 1000 });
@@ -15,6 +16,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use("/api/auth", authRouter);
+app.use("/api/config", configRouter);
 app.use("/api/project", projectRouter(cache));
 app.use("/api", issuesRouter(cache));
 app.use("/api/team", teamRouter);
