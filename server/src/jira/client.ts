@@ -40,3 +40,63 @@ export async function fetchJiraTickets(accountIds: string[]): Promise<JiraTicket
   const data = (await res.json()) as { issues: any[] };
   return transformJiraIssues(data.issues, JIRA_BROWSE);
 }
+
+export async function fetchJiraByFixVersion(fixVersion: string): Promise<JiraTicket[]> {
+  if (!env.jiraEmail || !env.jiraApiToken) {
+    return [];
+  }
+
+  const jql = `project = "MTA" AND fixVersion = "${fixVersion}" AND resolution is EMPTY AND status not in ("Verified", "Closed") ORDER BY updated DESC`;
+
+  const res = await fetch(`${JIRA_API}/search/jql`, {
+    method: "POST",
+    headers: {
+      Authorization: getAuthHeader(),
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      jql,
+      maxResults: 200,
+      fields: ["summary", "status", "priority", "issuetype", "assignee", "updated", "created", "fixVersions"],
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`JIRA API error ${res.status}: ${text}`);
+  }
+
+  const data = (await res.json()) as { issues: any[] };
+  return transformJiraIssues(data.issues, JIRA_BROWSE);
+}
+
+export async function fetchAllJiraTickets(): Promise<JiraTicket[]> {
+  if (!env.jiraEmail || !env.jiraApiToken) {
+    return [];
+  }
+
+  const jql = `project = "MTA" AND resolution is EMPTY AND status not in ("Verified", "Closed") ORDER BY updated DESC`;
+
+  const res = await fetch(`${JIRA_API}/search/jql`, {
+    method: "POST",
+    headers: {
+      Authorization: getAuthHeader(),
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      jql,
+      maxResults: 200,
+      fields: ["summary", "status", "priority", "issuetype", "assignee", "updated", "created", "fixVersions"],
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`JIRA API error ${res.status}: ${text}`);
+  }
+
+  const data = (await res.json()) as { issues: any[] };
+  return transformJiraIssues(data.issues, JIRA_BROWSE);
+}

@@ -67,7 +67,11 @@ export const api = {
 
   logout: () => request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
 
-  getJiraTickets: () => request<JiraTicket[]>("/api/jira/tickets"),
+  getJiraTickets: (fixVersion?: string) =>
+    request<JiraTicket[]>(`/api/jira/tickets${fixVersion ? `?fixVersion=${encodeURIComponent(fixVersion)}` : ""}`),
+
+  getMilestoneIssues: (milestone: string) =>
+    request<ProjectItem[]>(`/api/github/milestone/${encodeURIComponent(milestone)}/issues`),
 
   getConfig: () => request<{ release: ReleaseConfig | null }>("/api/config"),
 };

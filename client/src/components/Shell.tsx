@@ -10,6 +10,7 @@ import { useProjectColumns } from "../hooks/useProjectColumns";
 import { useFilters } from "../hooks/useFilters";
 import { useUpdateItem } from "../hooks/useUpdateItem";
 import { useJiraTickets } from "../hooks/useJiraTickets";
+import { useMilestoneIssues } from "../hooks/useMilestoneIssues";
 import { api } from "../api/client";
 import type { ProjectItem, TeamMember, ReleaseConfig } from "../types/project";
 
@@ -23,9 +24,22 @@ export function Shell() {
   const [releaseConfig, setReleaseConfig] = useState<ReleaseConfig | null>(null);
   const [releaseFilterActive, setReleaseFilterActive] = useState(true);
 
-  const { items, setItems, projectNodeId, loading, secondsUntilRefresh, refresh } = useProjectItems(PROJECT_ID, POLL_INTERVAL);
+  const { items: boardItems, setItems, projectNodeId, loading, secondsUntilRefresh, refresh } = useProjectItems(PROJECT_ID, POLL_INTERVAL);
   const { columns } = useProjectColumns(PROJECT_ID);
-  const { tickets: jiraTickets } = useJiraTickets(POLL_INTERVAL);
+
+  const activeMilestone = releaseFilterActive ? releaseConfig?.githubMilestone : undefined;
+  const activeFixVersion = releaseFilterActive ? releaseConfig?.jiraFixVersion : undefined;
+
+  const { items: milestoneItems } = useMilestoneIssues(activeMilestone, POLL_INTERVAL);
+  const { tickets: jiraTickets } = useJiraTickets(POLL_INTERVAL, activeFixVersion);
+
+  // Merge board items + milestone items, deduplicate by URL (board version wins — has status)
+  const mergedItems = useMemo(() => {
+    const boardUrls = new Set(boardItems.map((i) => i.url));
+    const extraMilestoneItems = milestoneItems.filter((i) => !boardUrls.has(i.url));
+    return [...boardItems, ...extraMilestoneItems];
+  }, [boardItems, milestoneItems]);
+
   const {
     filters,
     filteredItems,
@@ -38,7 +52,7 @@ export function Shell() {
     setLabelFilter,
     setMilestoneFilter,
     clearFilters,
-  } = useFilters(items, releaseConfig?.githubMilestone);
+  } = useFilters(mergedItems);
 
   const { moveCard, updateAssignees, updateLabels } = useUpdateItem(PROJECT_ID, {
     onOptimisticUpdate: setItems,
@@ -55,32 +69,19 @@ export function Shell() {
     }).catch(() => {});
   }, []);
 
-  const filteredJiraTickets = useMemo(() => {
-    if (!releaseFilterActive || !releaseConfig?.jiraFixVersion) return jiraTickets;
-    return jiraTickets.filter((t) => t.fixVersion === releaseConfig.jiraFixVersion);
-  }, [jiraTickets, releaseFilterActive, releaseConfig]);
-
   const toggleReleaseFilter = useCallback(() => {
-    setReleaseFilterActive((prev) => {
-      const next = !prev;
-      if (next && releaseConfig) {
-        setMilestoneFilter([releaseConfig.githubMilestone]);
-      } else {
-        setMilestoneFilter([]);
-      }
-      return next;
-    });
-  }, [releaseConfig, setMilestoneFilter]);
+    setReleaseFilterActive((prev) => !prev);
+  }, []);
 
   const handleSelectItem = useCallback(
     (item: ProjectItem) => {
-      const fresh = items.find((i) => i.id === item.id) ?? item;
+      const fresh = mergedItems.find((i) => i.id === item.id) ?? item;
       setSelectedItem(fresh);
     },
-    [items],
+    [mergedItems],
   );
 
-  if (loading && items.length === 0) {
+  if (loading && boardItems.length === 0) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", color: "var(--text-secondary)" }}>
         Loading project data...
@@ -151,7 +152,7 @@ export function Shell() {
           <BoardView items={filteredItems} columns={columns} projectNodeId={projectNodeId} onSelectItem={handleSelectItem} onMoveCard={moveCard} />
         )}
         {view === "list" && <ListView items={filteredItems} columns={columns} onSelectItem={handleSelectItem} />}
-        {view === "engineer" && <EngineerView items={filteredItems} team={team} jiraTickets={filteredJiraTickets} onSelectItem={handleSelectItem} />}
+        {view === "engineer" && <EngineerView items={filteredItems} team={team} jiraTickets={jiraTickets} onSelectItem={handleSelectItem} />}
       </main>
       {selectedItem && (
         <DetailPanel
