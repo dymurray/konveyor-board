@@ -114,6 +114,11 @@ export function EngineerView({ items, team, jiraTickets, onSelectItem }: Enginee
                     {item.milestone}
                   </span>
                 )}
+                {item.sprint && (
+                  <span style={{ padding: "1px 5px", background: "#d2992222", color: "var(--accent-yellow)", borderRadius: 3, fontSize: 9 }}>
+                    {item.sprint}
+                  </span>
+                )}
                 <span style={{
                   padding: "1px 6px",
                   borderRadius: 3,

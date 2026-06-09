@@ -32,7 +32,7 @@ async function request<T>(path: string, opts?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  getItems: (projectId: number) => request<{ projectNodeId: string; items: ProjectItem[] }>(`/api/project/${projectId}/items`),
+  getItems: (projectId: number) => request<{ projectNodeId: string; items: ProjectItem[]; currentSprint: string | null }>(`/api/project/${projectId}/items`),
 
   getColumns: (projectId: number) => request<ProjectColumn[]>(`/api/project/${projectId}/columns`),
 

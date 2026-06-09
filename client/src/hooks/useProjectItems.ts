@@ -5,6 +5,7 @@ import type { ProjectItem } from "../types/project";
 export function useProjectItems(projectId: number, intervalMs: number) {
   const [items, setItems] = useState<ProjectItem[]>([]);
   const [projectNodeId, setProjectNodeId] = useState<string>("");
+  const [currentSprint, setCurrentSprint] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [secondsUntilRefresh, setSecondsUntilRefresh] = useState(0);
@@ -15,6 +16,7 @@ export function useProjectItems(projectId: number, intervalMs: number) {
       const data = await api.getItems(projectId);
       setItems(data.items);
       setProjectNodeId(data.projectNodeId);
+      setCurrentSprint(data.currentSprint);
       setError(null);
     } catch (err) {
       setError(String(err));
@@ -45,5 +47,5 @@ export function useProjectItems(projectId: number, intervalMs: number) {
     await fetchItems();
   }, [fetchItems, intervalMs]);
 
-  return { items, setItems, projectNodeId, loading, error, secondsUntilRefresh, refresh };
+  return { items, setItems, projectNodeId, currentSprint, loading, error, secondsUntilRefresh, refresh };
 }

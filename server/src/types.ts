@@ -15,6 +15,7 @@ export interface ProjectItem {
   createdAt: string;
   updatedAt: string;
   milestone: string;
+  sprint: string;
 }
 
 export interface Assignee {

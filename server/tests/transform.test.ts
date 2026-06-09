@@ -86,6 +86,7 @@ describe("transformProjectItems", () => {
       createdAt: "2026-01-15T10:00:00Z",
       updatedAt: "2026-06-01T14:30:00Z",
       milestone: "v7.2.0",
+      sprint: "",
     });
   });
 
@@ -115,6 +116,7 @@ describe("transformProjectItems", () => {
     expect(items[0].status).toBe("");
     expect(items[0].statusOptionId).toBe("");
     expect(items[0].milestone).toBe("");
+    expect(items[0].sprint).toBe("");
   });
 });
 

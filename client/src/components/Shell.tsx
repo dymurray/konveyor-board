@@ -24,7 +24,7 @@ export function Shell() {
   const [releaseConfig, setReleaseConfig] = useState<ReleaseConfig | null>(null);
   const [releaseFilterActive, setReleaseFilterActive] = useState(true);
 
-  const { items: boardItems, setItems, projectNodeId, loading, secondsUntilRefresh, refresh } = useProjectItems(PROJECT_ID, POLL_INTERVAL);
+  const { items: boardItems, setItems, projectNodeId, currentSprint, loading, secondsUntilRefresh, refresh } = useProjectItems(PROJECT_ID, POLL_INTERVAL);
   const { columns } = useProjectColumns(PROJECT_ID);
 
   const activeMilestone = releaseFilterActive ? releaseConfig?.githubMilestone : undefined;
@@ -35,10 +35,14 @@ export function Shell() {
 
   // Merge board items + milestone items, deduplicate by URL (board version wins — has status)
   const mergedItems = useMemo(() => {
-    const boardUrls = new Set(boardItems.map((i) => i.url));
+    let activeBoardItems = boardItems;
+    if (releaseFilterActive && currentSprint) {
+      activeBoardItems = boardItems.filter((i) => i.sprint === currentSprint);
+    }
+    const boardUrls = new Set(activeBoardItems.map((i) => i.url));
     const extraMilestoneItems = milestoneItems.filter((i) => !boardUrls.has(i.url));
-    return [...boardItems, ...extraMilestoneItems];
-  }, [boardItems, milestoneItems]);
+    return [...activeBoardItems, ...extraMilestoneItems];
+  }, [boardItems, milestoneItems, releaseFilterActive, currentSprint]);
 
   const {
     filters,
@@ -131,6 +135,12 @@ export function Shell() {
               <span style={{ color: "var(--accent-green)" }}>{releaseConfig.githubMilestone}</span>
               <span style={{ color: "var(--text-muted)" }}>/</span>
               <span style={{ color: "#4c9aff" }}>{releaseConfig.jiraFixVersion}</span>
+              {currentSprint && (
+                <>
+                  <span style={{ color: "var(--text-muted)" }}>/</span>
+                  <span style={{ color: "var(--accent-yellow)" }}>Sprint: {currentSprint}</span>
+                </>
+              )}
             </div>
             <button
               onClick={toggleReleaseFilter}

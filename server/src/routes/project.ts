@@ -18,10 +18,10 @@ export function projectRouter(cache: AppCache): Router {
 
     try {
       const token = getToken(req);
-      const { projectNodeId, items, columns } = await fetchProject(token, dashboardConfig.github.org, projectNumber);
-      cache.set(cacheKey, { projectNodeId, items }, dashboardConfig.polling.cacheTtlMs / 1000);
+      const { projectNodeId, items, columns, currentSprint } = await fetchProject(token, dashboardConfig.github.org, projectNumber);
+      cache.set(cacheKey, { projectNodeId, items, currentSprint }, dashboardConfig.polling.cacheTtlMs / 1000);
       cache.set(`project:${projectNumber}:fields`, columns, 300);
-      res.json({ projectNodeId, items });
+      res.json({ projectNodeId, items, currentSprint });
     } catch (err) {
       console.error("GET /project/:id/items error:", err);
       res.status(502).json({ error: `GitHub API error: ${String(err)}` });

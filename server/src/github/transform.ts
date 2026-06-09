@@ -14,6 +14,10 @@ export function transformProjectItems(nodes: any[]): ProjectItem[] {
       (fv: any) => fv.__typename === "ProjectV2ItemFieldSingleSelectValue" && fv.field?.name === "Status",
     );
 
+    const sprintField = node.fieldValues?.nodes?.find(
+      (fv: any) => fv.__typename === "ProjectV2ItemFieldIterationValue" && fv.field?.name === "Sprint",
+    );
+
     items.push({
       id: node.id,
       issueId: content.id,
@@ -37,6 +41,7 @@ export function transformProjectItems(nodes: any[]): ProjectItem[] {
       createdAt: content.createdAt,
       updatedAt: content.updatedAt,
       milestone: content.milestone?.title ?? "",
+      sprint: sprintField?.title ?? "",
     });
   }
 

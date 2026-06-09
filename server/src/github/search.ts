@@ -47,6 +47,7 @@ export async function searchMilestoneIssues(
         milestone: issue.milestone?.title ?? "",
         createdAt: issue.created_at,
         updatedAt: issue.updated_at,
+        sprint: "",
       });
     }
 

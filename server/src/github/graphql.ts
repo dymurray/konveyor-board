@@ -16,6 +16,13 @@ const PROJECT_QUERY = `
               name
               options { id, name }
             }
+            ... on ProjectV2IterationField {
+              id
+              name
+              configuration {
+                iterations { id, title, startDate, duration }
+              }
+            }
           }
         }
         items(first: 100, after: $cursor) {
@@ -29,6 +36,13 @@ const PROJECT_QUERY = `
                   field { ... on ProjectV2SingleSelectField { name } }
                   name
                   optionId
+                }
+                ... on ProjectV2ItemFieldIterationValue {
+                  field { ... on ProjectV2IterationField { name } }
+                  title
+                  startDate
+                  duration
+                  iterationId
                 }
               }
             }
@@ -57,6 +71,7 @@ interface FetchProjectResult {
   projectNodeId: string;
   items: ProjectItem[];
   columns: ProjectColumn[];
+  currentSprint: string | null;
 }
 
 export async function fetchProject(
@@ -71,6 +86,7 @@ export async function fetchProject(
   let allItemNodes: any[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
   let columns: ProjectColumn[] = [];
   let projectNodeId = "";
+  let currentSprint: string | null = null;
   let cursor: string | null = null;
   let hasNextPage = true;
 
@@ -89,6 +105,24 @@ export async function fetchProject(
 
     if (columns.length === 0) {
       columns = transformProjectColumns(project.fields.nodes);
+
+      // Find current sprint from iteration fields
+      if (!currentSprint) {
+        const now = new Date();
+        for (const field of project.fields.nodes) {
+          if (field.__typename === "ProjectV2IterationField" && field.name === "Sprint") {
+            for (const iter of field.configuration.iterations) {
+              const start = new Date(iter.startDate);
+              const end = new Date(start);
+              end.setDate(end.getDate() + iter.duration);
+              if (now >= start && now < end) {
+                currentSprint = iter.title;
+                break;
+              }
+            }
+          }
+        }
+      }
     }
 
     allItemNodes = allItemNodes.concat(project.items.nodes);
@@ -100,5 +134,6 @@ export async function fetchProject(
     projectNodeId,
     items: transformProjectItems(allItemNodes),
     columns,
+    currentSprint,
   };
 }
