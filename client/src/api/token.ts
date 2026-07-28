@@ -18,7 +18,7 @@ export function getAuthHeaders(): HeadersInit {
   const token = getToken();
   if (!token) throw new Error("No GitHub token configured");
   return {
-    Authorization: `token ${token}`,
+    Authorization: `Bearer ${token}`,
     Accept: "application/json",
     "Content-Type": "application/json",
   };

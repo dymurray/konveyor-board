@@ -25,7 +25,7 @@ export function Shell() {
   const [releaseConfig, setReleaseConfig] = useState<ReleaseConfig | null>(null);
   const [releaseFilterActive, setReleaseFilterActive] = useState(true);
 
-  const { items: boardItems, setItems, projectNodeId, currentSprint, loading, secondsUntilRefresh, refresh } = useProjectItems(PROJECT_ID, POLL_INTERVAL);
+  const { items: boardItems, setItems, projectNodeId, currentSprint, loading, error: projectError, secondsUntilRefresh, refresh } = useProjectItems(PROJECT_ID, POLL_INTERVAL);
   const { columns } = useProjectColumns(PROJECT_ID);
 
   const activeMilestone = releaseFilterActive ? releaseConfig?.githubMilestone : undefined;
@@ -90,6 +90,19 @@ export function Shell() {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", color: "var(--text-secondary)" }}>
         Loading project data...
+      </div>
+    );
+  }
+
+  if (projectError && boardItems.length === 0) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100vh", gap: 12 }}>
+        <div style={{ color: "#f85149", fontSize: 14, maxWidth: 500, textAlign: "center" }}>
+          Failed to load project data: {projectError}
+        </div>
+        <button onClick={() => void refresh()} style={{ padding: "6px 16px", background: "var(--bg-tertiary)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text-primary)", cursor: "pointer", fontSize: 13 }}>
+          Retry
+        </button>
       </div>
     );
   }
