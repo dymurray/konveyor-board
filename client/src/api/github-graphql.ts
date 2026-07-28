@@ -115,7 +115,15 @@ export async function fetchProject(
       throw new Error(`GraphQL errors: ${JSON.stringify(json.errors)}`);
     }
 
-    const project = json.data.organization.projectV2;
+    const org_data = json.data?.organization;
+    if (!org_data) {
+      throw new Error("Cannot access the organization. Ensure your token has the read:org scope and access to the konveyor org.");
+    }
+
+    const project = org_data.projectV2;
+    if (!project) {
+      throw new Error("Cannot access ProjectV2 #" + projectNumber + ". Ensure your token has the project scope (classic PAT) or Organization Projects read permission (fine-grained PAT).");
+    }
 
     if (!projectNodeId) {
       projectNodeId = project.id;
