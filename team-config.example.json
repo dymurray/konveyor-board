@@ -1,0 +1,21 @@
+{
+  "team_name": "Your Team Name",
+  "report_title": "Your Team - Weekly Report",
+  "jira": {
+    "cloud_id": "your-instance.atlassian.net",
+    "team_filter_id": "",
+    "base_url": "https://your-instance.atlassian.net/browse",
+    "projects": ["Your Project"]
+  },
+  "products": [],
+  "engineers": [
+    {
+      "name": "Example Engineer",
+      "directory": "example-engineer",
+      "github": "github-username",
+      "jira_account_id": "jira-account-id",
+      "jira_display_names": ["Example Engineer"],
+      "role": "dev"
+    }
+  ]
+}

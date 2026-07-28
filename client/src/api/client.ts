@@ -1,4 +1,11 @@
 import type { ProjectItem, ProjectColumn, Label, TeamMember, AuthUser, JiraTicket, ReleaseConfig } from "../types/project";
+import { getToken, getAuthHeaders, clearToken } from "./token";
+import { fetchProject, updateProjectItemStatus } from "./github-graphql";
+import { setAssignees, addLabels, removeLabel, fetchRepoLabels } from "./github-rest";
+import { searchMilestoneIssues } from "./github-search";
+import { fetchJiraByFixVersion, fetchAllJiraTickets } from "./jira";
+import { invalidateCache } from "./cache";
+import { getOrg, getProjectNumber, getTeamMembers, getReleaseConfig } from "./config";
 
 class ApiError extends Error {
   constructor(
@@ -9,69 +16,116 @@ class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, opts?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
-    ...opts,
-    headers: {
-      "Content-Type": "application/json",
-      ...opts?.headers,
-    },
-  });
+let onAuthFailure: (() => void) | null = null;
 
-  if (res.status === 401) {
-    window.location.href = "/api/auth/github";
-    throw new ApiError(401, "Not authenticated");
-  }
+export function setAuthFailureHandler(handler: () => void): void {
+  onAuthFailure = handler;
+}
 
-  if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new ApiError(res.status, body.error ?? res.statusText);
-  }
-
-  return (await res.json()) as T;
+function handleAuthError(): never {
+  clearToken();
+  onAuthFailure?.();
+  throw new ApiError(401, "Not authenticated");
 }
 
 export const api = {
-  getItems: (projectId: number) => request<{ projectNodeId: string; items: ProjectItem[]; currentSprint: string | null }>(`/api/project/${projectId}/items`),
+  getItems: async (projectId: number) => {
+    if (!getToken()) handleAuthError();
+    try {
+      const result = await fetchProject(getOrg(), projectId || getProjectNumber());
+      return { projectNodeId: result.projectNodeId, items: result.items, currentSprint: result.currentSprint };
+    } catch (e) {
+      if (e instanceof Error && e.message.includes("401")) handleAuthError();
+      throw e;
+    }
+  },
 
-  getColumns: (projectId: number) => request<ProjectColumn[]>(`/api/project/${projectId}/columns`),
+  getColumns: async (projectId: number): Promise<ProjectColumn[]> => {
+    if (!getToken()) handleAuthError();
+    try {
+      const result = await fetchProject(getOrg(), projectId || getProjectNumber());
+      return result.columns;
+    } catch (e) {
+      if (e instanceof Error && e.message.includes("401")) handleAuthError();
+      throw e;
+    }
+  },
 
-  updateStatus: (projectId: number, itemId: string, body: { fieldId: string; optionId: string; projectId: string }) =>
-    request<{ ok: boolean }>(`/api/project/${projectId}/items/${itemId}/status`, {
-      method: "PATCH",
-      body: JSON.stringify(body),
-    }),
+  updateStatus: async (_projectId: number, itemId: string, body: { fieldId: string; optionId: string; projectId: string }): Promise<{ ok: boolean }> => {
+    if (!getToken()) handleAuthError();
+    await updateProjectItemStatus(body.projectId, itemId, body.fieldId, body.optionId);
+    invalidateCache("project:");
+    return { ok: true };
+  },
 
-  setAssignees: (owner: string, repo: string, issueNumber: number, assignees: string[]) =>
-    request<{ ok: boolean }>(`/api/repos/${owner}/${repo}/issues/${issueNumber}/assignees`, {
-      method: "PATCH",
-      body: JSON.stringify({ assignees }),
-    }),
+  setAssignees: async (owner: string, repo: string, issueNumber: number, assignees: string[]): Promise<{ ok: boolean }> => {
+    if (!getToken()) handleAuthError();
+    await setAssignees(owner, repo, issueNumber, assignees);
+    invalidateCache("project:");
+    return { ok: true };
+  },
 
-  addLabels: (owner: string, repo: string, issueNumber: number, labels: string[]) =>
-    request<{ ok: boolean }>(`/api/repos/${owner}/${repo}/issues/${issueNumber}/labels`, {
-      method: "POST",
-      body: JSON.stringify({ labels }),
-    }),
+  addLabels: async (owner: string, repo: string, issueNumber: number, labels: string[]): Promise<{ ok: boolean }> => {
+    if (!getToken()) handleAuthError();
+    await addLabels(owner, repo, issueNumber, labels);
+    invalidateCache("project:");
+    return { ok: true };
+  },
 
-  removeLabel: (owner: string, repo: string, issueNumber: number, label: string) =>
-    request<{ ok: boolean }>(`/api/repos/${owner}/${repo}/issues/${issueNumber}/labels/${encodeURIComponent(label)}`, {
-      method: "DELETE",
-    }),
+  removeLabel: async (owner: string, repo: string, issueNumber: number, label: string): Promise<{ ok: boolean }> => {
+    if (!getToken()) handleAuthError();
+    await removeLabel(owner, repo, issueNumber, label);
+    invalidateCache("project:");
+    return { ok: true };
+  },
 
-  getRepoLabels: (owner: string, repo: string) => request<Label[]>(`/api/repos/${owner}/${repo}/labels`),
+  getRepoLabels: async (owner: string, repo: string): Promise<Label[]> => {
+    if (!getToken()) handleAuthError();
+    return fetchRepoLabels(owner, repo);
+  },
 
-  getTeam: () => request<TeamMember[]>("/api/team"),
+  getTeam: async (): Promise<TeamMember[]> => {
+    return getTeamMembers();
+  },
 
-  getMe: () => request<AuthUser>("/api/auth/me"),
+  getMe: async (): Promise<AuthUser> => {
+    const token = getToken();
+    if (!token) handleAuthError();
 
-  logout: () => request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
+    const res = await fetch("https://api.github.com/user", {
+      headers: getAuthHeaders(),
+    });
 
-  getJiraTickets: (fixVersion?: string) =>
-    request<JiraTicket[]>(`/api/jira/tickets${fixVersion ? `?fixVersion=${encodeURIComponent(fixVersion)}` : ""}`),
+    if (res.status === 401) handleAuthError();
+    if (!res.ok) throw new ApiError(res.status, `GitHub user API error: ${res.statusText}`);
 
-  getMilestoneIssues: (milestone: string) =>
-    request<ProjectItem[]>(`/api/github/milestone/${encodeURIComponent(milestone)}/issues`),
+    const data = await res.json();
+    return {
+      login: data.login,
+      avatarUrl: data.avatar_url,
+      name: data.name ?? data.login,
+    };
+  },
 
-  getConfig: () => request<{ release: ReleaseConfig | null }>("/api/config"),
+  logout: async (): Promise<{ ok: boolean }> => {
+    clearToken();
+    return { ok: true };
+  },
+
+  getJiraTickets: async (fixVersion?: string): Promise<JiraTicket[]> => {
+    try {
+      return fixVersion ? await fetchJiraByFixVersion(fixVersion) : await fetchAllJiraTickets();
+    } catch {
+      return [];
+    }
+  },
+
+  getMilestoneIssues: async (milestone: string): Promise<ProjectItem[]> => {
+    if (!getToken()) handleAuthError();
+    return searchMilestoneIssues(getOrg(), milestone);
+  },
+
+  getConfig: async (): Promise<{ release: ReleaseConfig | null }> => {
+    return { release: getReleaseConfig() };
+  },
 };

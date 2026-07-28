@@ -12,10 +12,11 @@ import { useUpdateItem } from "../hooks/useUpdateItem";
 import { useJiraTickets } from "../hooks/useJiraTickets";
 import { useMilestoneIssues } from "../hooks/useMilestoneIssues";
 import { api } from "../api/client";
+import { getProjectNumber, getPollInterval } from "../api/config";
 import type { ProjectItem, TeamMember, ReleaseConfig } from "../types/project";
 
-const PROJECT_ID = 67;
-const POLL_INTERVAL = 30000;
+const PROJECT_ID = getProjectNumber();
+const POLL_INTERVAL = getPollInterval();
 
 export function Shell() {
   const [view, setView] = useState<ViewType>("board");
