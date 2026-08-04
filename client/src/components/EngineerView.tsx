@@ -230,7 +230,7 @@ export function EngineerView({ items, team, jiraTickets, onSelectItem }: Enginee
         </div>
       </div>
 
-      {team.map((member) => {
+      {[...team].sort((a, b) => a.name.localeCompare(b.name)).map((member) => {
         const memberItems = sourceFilter !== "jira" ? (byEngineer.ghMap.get(member.github) ?? []) : [];
         const memberJira = sourceFilter !== "github" ? (byEngineer.jiraMap.get(member.jira_account_id) ?? []) : [];
         const totalItems = memberItems.length + memberJira.length;

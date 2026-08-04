@@ -23,13 +23,15 @@ export function Shell() {
   const [selectedItem, setSelectedItem] = useState<ProjectItem | null>(null);
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [releaseConfig, setReleaseConfig] = useState<ReleaseConfig | null>(null);
+  const [selectedVersionIndex, setSelectedVersionIndex] = useState(0);
   const [releaseFilterActive, setReleaseFilterActive] = useState(true);
 
   const { items: boardItems, setItems, projectNodeId, currentSprint, loading, error: projectError, secondsUntilRefresh, refresh } = useProjectItems(PROJECT_ID, POLL_INTERVAL);
   const { columns } = useProjectColumns(PROJECT_ID);
 
-  const activeMilestone = releaseFilterActive ? releaseConfig?.githubMilestone : undefined;
-  const activeFixVersion = releaseFilterActive ? releaseConfig?.jiraFixVersion : undefined;
+  const selectedVersion = releaseConfig?.versions[selectedVersionIndex];
+  const activeMilestone = releaseFilterActive && selectedVersion ? selectedVersion.githubMilestone : undefined;
+  const activeFixVersion = releaseFilterActive && selectedVersion ? selectedVersion.jiraFixVersion : undefined;
 
   const { items: milestoneItems } = useMilestoneIssues(activeMilestone, POLL_INTERVAL);
   const { tickets: jiraTickets } = useJiraTickets(POLL_INTERVAL, activeFixVersion);
@@ -127,7 +129,7 @@ export function Shell() {
         onRefresh={refresh}
       />
       <main style={{ flex: 1, overflow: "auto", position: "relative" }}>
-        {releaseConfig && (
+        {releaseConfig && releaseConfig.versions.length > 0 && (
           <div style={{
             padding: "8px 16px",
             background: releaseFilterActive ? "#23863615" : "var(--bg-secondary)",
@@ -146,9 +148,26 @@ export function Shell() {
                 display: "inline-block",
               }} />
               <span style={{ color: "var(--text-primary)", fontWeight: 500 }}>Release:</span>
-              <span style={{ color: "var(--accent-green)" }}>{releaseConfig.githubMilestone}</span>
-              <span style={{ color: "var(--text-muted)" }}>/</span>
-              <span style={{ color: "#4c9aff" }}>{releaseConfig.jiraFixVersion}</span>
+              <div style={{ display: "flex", gap: 2, background: "var(--bg-tertiary)", borderRadius: 4, padding: 2 }}>
+                {releaseConfig.versions.map((v, i) => (
+                  <button
+                    key={v.jiraFixVersion}
+                    onClick={() => { setSelectedVersionIndex(i); if (!releaseFilterActive) setReleaseFilterActive(true); }}
+                    style={{
+                      padding: "2px 8px",
+                      border: "none",
+                      borderRadius: 3,
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      background: releaseFilterActive && selectedVersionIndex === i ? "var(--bg-secondary)" : "transparent",
+                      color: releaseFilterActive && selectedVersionIndex === i ? "#4c9aff" : "var(--text-muted)",
+                    }}
+                  >
+                    {v.jiraFixVersion}
+                  </button>
+                ))}
+              </div>
               {currentSprint && (
                 <>
                   <span style={{ color: "var(--text-muted)" }}>/</span>

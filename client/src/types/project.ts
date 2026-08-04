@@ -61,7 +61,11 @@ export interface JiraTicket {
   fixVersion: string;
 }
 
-export interface ReleaseConfig {
+export interface ReleaseVersion {
   githubMilestone: string;
   jiraFixVersion: string;
+}
+
+export interface ReleaseConfig {
+  versions: ReleaseVersion[];
 }
