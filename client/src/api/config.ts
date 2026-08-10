@@ -3,7 +3,7 @@ import type { TeamMember, ReleaseConfig } from "../types/project";
 interface DashboardConfig {
   github: { org: string; projectNumber: number };
   polling: { intervalMs: number; cacheTtlMs: number };
-  release?: { versions: { githubMilestone: string; jiraFixVersion: string }[] };
+  release?: { jiraSprint?: string; versions: { githubMilestone: string; jiraFixVersion: string }[] };
 }
 
 interface TeamConfig {

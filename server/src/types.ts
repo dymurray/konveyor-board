@@ -69,6 +69,7 @@ export interface DashboardConfig {
     callbackUrl: string;
   };
   release?: {
+    jiraSprint?: string;
     githubMilestone: string;
     jiraFixVersion: string;
   };

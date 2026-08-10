@@ -34,7 +34,8 @@ export function Shell() {
   const activeFixVersion = releaseFilterActive && selectedVersion ? selectedVersion.jiraFixVersion : undefined;
 
   const { items: milestoneItems } = useMilestoneIssues(activeMilestone, POLL_INTERVAL);
-  const { tickets: jiraTickets } = useJiraTickets(POLL_INTERVAL, activeFixVersion);
+  const activeJiraSprint = releaseFilterActive && releaseConfig?.jiraSprint ? releaseConfig.jiraSprint : undefined;
+  const { tickets: jiraTickets } = useJiraTickets(POLL_INTERVAL, activeFixVersion, activeJiraSprint);
 
   // Merge board items + milestone items, deduplicate by URL (board version wins — has status)
   const mergedItems = useMemo(() => {

@@ -58,12 +58,16 @@ async function jiraSearch(jql: string): Promise<JiraTicket[]> {
   return transformJiraIssues(data.issues);
 }
 
-export async function fetchJiraByFixVersion(fixVersion: string): Promise<JiraTicket[]> {
-  const jql = `project = "MTA" AND fixVersion = "${fixVersion}" AND resolution is EMPTY AND status not in ("Verified", "Closed") ORDER BY updated DESC`;
+export async function fetchJiraByFixVersion(fixVersion: string, sprint?: string): Promise<JiraTicket[]> {
+  let jql = `project = "MTA" AND fixVersion = "${fixVersion}" AND resolution is EMPTY AND status not in ("Verified", "Closed")`;
+  if (sprint) jql += ` AND sprint = "${sprint}"`;
+  jql += ` ORDER BY updated DESC`;
   return jiraSearch(jql);
 }
 
-export async function fetchAllJiraTickets(): Promise<JiraTicket[]> {
-  const jql = `project = "MTA" AND resolution is EMPTY AND status not in ("Verified", "Closed") ORDER BY updated DESC`;
+export async function fetchAllJiraTickets(sprint?: string): Promise<JiraTicket[]> {
+  let jql = `project = "MTA" AND resolution is EMPTY AND status not in ("Verified", "Closed")`;
+  if (sprint) jql += ` AND sprint = "${sprint}"`;
+  jql += ` ORDER BY updated DESC`;
   return jiraSearch(jql);
 }

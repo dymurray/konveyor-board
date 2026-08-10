@@ -112,8 +112,8 @@ export const api = {
     return { ok: true };
   },
 
-  getJiraTickets: async (fixVersion?: string): Promise<JiraTicket[]> => {
-    return fixVersion ? await fetchJiraByFixVersion(fixVersion) : await fetchAllJiraTickets();
+  getJiraTickets: async (fixVersion?: string, sprint?: string): Promise<JiraTicket[]> => {
+    return fixVersion ? await fetchJiraByFixVersion(fixVersion, sprint) : await fetchAllJiraTickets(sprint);
   },
 
   getMilestoneIssues: async (milestone: string): Promise<ProjectItem[]> => {

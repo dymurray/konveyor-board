@@ -10,13 +10,15 @@ function getAuthHeader(): string {
   return "Basic " + Buffer.from(`${env.jiraEmail}:${env.jiraApiToken}`).toString("base64");
 }
 
-export async function fetchJiraTickets(accountIds: string[]): Promise<JiraTicket[]> {
+export async function fetchJiraTickets(accountIds: string[], sprint?: string): Promise<JiraTicket[]> {
   if (!env.jiraEmail || !env.jiraApiToken) {
     return [];
   }
 
   const quotedIds = accountIds.map((id) => `"${id}"`).join(", ");
-  const jql = `assignee in (${quotedIds}) AND project = "MTA" AND resolution is EMPTY AND status not in ("Verified", "Closed") ORDER BY updated DESC`;
+  let jql = `assignee in (${quotedIds}) AND project = "MTA" AND resolution is EMPTY AND status not in ("Verified", "Closed")`;
+  if (sprint) jql += ` AND sprint = "${sprint}"`;
+  jql += ` ORDER BY updated DESC`;
 
   const res = await fetch(`${JIRA_API}/search/jql`, {
     method: "POST",
@@ -41,12 +43,14 @@ export async function fetchJiraTickets(accountIds: string[]): Promise<JiraTicket
   return transformJiraIssues(data.issues, JIRA_BROWSE);
 }
 
-export async function fetchJiraByFixVersion(fixVersion: string): Promise<JiraTicket[]> {
+export async function fetchJiraByFixVersion(fixVersion: string, sprint?: string): Promise<JiraTicket[]> {
   if (!env.jiraEmail || !env.jiraApiToken) {
     return [];
   }
 
-  const jql = `project = "MTA" AND fixVersion = "${fixVersion}" AND resolution is EMPTY AND status not in ("Verified", "Closed") ORDER BY updated DESC`;
+  let jql = `project = "MTA" AND fixVersion = "${fixVersion}" AND resolution is EMPTY AND status not in ("Verified", "Closed")`;
+  if (sprint) jql += ` AND sprint = "${sprint}"`;
+  jql += ` ORDER BY updated DESC`;
 
   const res = await fetch(`${JIRA_API}/search/jql`, {
     method: "POST",
@@ -71,12 +75,14 @@ export async function fetchJiraByFixVersion(fixVersion: string): Promise<JiraTic
   return transformJiraIssues(data.issues, JIRA_BROWSE);
 }
 
-export async function fetchAllJiraTickets(): Promise<JiraTicket[]> {
+export async function fetchAllJiraTickets(sprint?: string): Promise<JiraTicket[]> {
   if (!env.jiraEmail || !env.jiraApiToken) {
     return [];
   }
 
-  const jql = `project = "MTA" AND resolution is EMPTY AND status not in ("Verified", "Closed") ORDER BY updated DESC`;
+  let jql = `project = "MTA" AND resolution is EMPTY AND status not in ("Verified", "Closed")`;
+  if (sprint) jql += ` AND sprint = "${sprint}"`;
+  jql += ` ORDER BY updated DESC`;
 
   const res = await fetch(`${JIRA_API}/search/jql`, {
     method: "POST",

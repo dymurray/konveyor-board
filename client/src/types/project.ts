@@ -67,5 +67,6 @@ export interface ReleaseVersion {
 }
 
 export interface ReleaseConfig {
+  jiraSprint?: string;
   versions: ReleaseVersion[];
 }
