@@ -16,8 +16,9 @@ export async function fetchJiraTickets(accountIds: string[], sprint?: string): P
   }
 
   const quotedIds = accountIds.map((id) => `"${id}"`).join(", ");
-  let jql = `assignee in (${quotedIds}) AND project = "MTA" AND resolution is EMPTY AND status not in ("Verified", "Closed")`;
-  if (sprint) jql += ` AND sprint = "${sprint}"`;
+  let condition = `assignee in (${quotedIds})`;
+  if (sprint) condition = `(${condition} OR sprint = "${sprint}")`;
+  let jql = `${condition} AND project = "MTA" AND resolution is EMPTY AND status not in ("Verified", "Closed")`;
   jql += ` ORDER BY updated DESC`;
 
   const res = await fetch(`${JIRA_API}/search/jql`, {
@@ -48,9 +49,9 @@ export async function fetchJiraByFixVersion(fixVersion: string, sprint?: string)
     return [];
   }
 
-  let jql = `project = "MTA" AND fixVersion = "${fixVersion}" AND resolution is EMPTY AND status not in ("Verified", "Closed")`;
-  if (sprint) jql += ` AND sprint = "${sprint}"`;
-  jql += ` ORDER BY updated DESC`;
+  let condition = `fixVersion = "${fixVersion}"`;
+  if (sprint) condition = `(${condition} OR sprint = "${sprint}")`;
+  const jql = `project = "MTA" AND ${condition} AND resolution is EMPTY AND status not in ("Verified", "Closed") ORDER BY updated DESC`;
 
   const res = await fetch(`${JIRA_API}/search/jql`, {
     method: "POST",
@@ -75,14 +76,45 @@ export async function fetchJiraByFixVersion(fixVersion: string, sprint?: string)
   return transformJiraIssues(data.issues, JIRA_BROWSE);
 }
 
-export async function fetchAllJiraTickets(sprint?: string): Promise<JiraTicket[]> {
+export async function fetchJiraByFixVersions(fixVersions: string[], sprint?: string): Promise<JiraTicket[]> {
+  if (!env.jiraEmail || !env.jiraApiToken || fixVersions.length === 0) {
+    return [];
+  }
+
+  const quoted = fixVersions.map(v => `"${v}"`).join(", ");
+  let condition = `fixVersion IN (${quoted})`;
+  if (sprint) condition = `(${condition} OR sprint = "${sprint}")`;
+  const jql = `project = "MTA" AND ${condition} AND resolution is EMPTY AND status not in ("Verified", "Closed") ORDER BY updated DESC`;
+
+  const res = await fetch(`${JIRA_API}/search/jql`, {
+    method: "POST",
+    headers: {
+      Authorization: getAuthHeader(),
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      jql,
+      maxResults: 200,
+      fields: ["summary", "status", "priority", "issuetype", "assignee", "updated", "created", "fixVersions"],
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`JIRA API error ${res.status}: ${text}`);
+  }
+
+  const data = (await res.json()) as { issues: any[] };
+  return transformJiraIssues(data.issues, JIRA_BROWSE);
+}
+
+export async function fetchAllJiraTickets(): Promise<JiraTicket[]> {
   if (!env.jiraEmail || !env.jiraApiToken) {
     return [];
   }
 
-  let jql = `project = "MTA" AND resolution is EMPTY AND status not in ("Verified", "Closed")`;
-  if (sprint) jql += ` AND sprint = "${sprint}"`;
-  jql += ` ORDER BY updated DESC`;
+  const jql = `project = "MTA" AND resolution is EMPTY AND status not in ("Verified", "Closed") ORDER BY updated DESC`;
 
   const res = await fetch(`${JIRA_API}/search/jql`, {
     method: "POST",

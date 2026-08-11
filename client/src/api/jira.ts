@@ -59,15 +59,22 @@ async function jiraSearch(jql: string): Promise<JiraTicket[]> {
 }
 
 export async function fetchJiraByFixVersion(fixVersion: string, sprint?: string): Promise<JiraTicket[]> {
-  let jql = `project = "MTA" AND fixVersion = "${fixVersion}" AND resolution is EMPTY AND status not in ("Verified", "Closed")`;
-  if (sprint) jql += ` AND sprint = "${sprint}"`;
-  jql += ` ORDER BY updated DESC`;
+  let condition = `fixVersion = "${fixVersion}"`;
+  if (sprint) condition = `(${condition} OR sprint = "${sprint}")`;
+  const jql = `project = "MTA" AND ${condition} AND resolution is EMPTY AND status not in ("Verified", "Closed") ORDER BY updated DESC`;
   return jiraSearch(jql);
 }
 
-export async function fetchAllJiraTickets(sprint?: string): Promise<JiraTicket[]> {
-  let jql = `project = "MTA" AND resolution is EMPTY AND status not in ("Verified", "Closed")`;
-  if (sprint) jql += ` AND sprint = "${sprint}"`;
-  jql += ` ORDER BY updated DESC`;
+export async function fetchJiraByFixVersions(fixVersions: string[], sprint?: string): Promise<JiraTicket[]> {
+  if (fixVersions.length === 0) return [];
+  const quoted = fixVersions.map(v => `"${v}"`).join(", ");
+  let condition = `fixVersion IN (${quoted})`;
+  if (sprint) condition = `(${condition} OR sprint = "${sprint}")`;
+  const jql = `project = "MTA" AND ${condition} AND resolution is EMPTY AND status not in ("Verified", "Closed") ORDER BY updated DESC`;
+  return jiraSearch(jql);
+}
+
+export async function fetchAllJiraTickets(): Promise<JiraTicket[]> {
+  const jql = `project = "MTA" AND resolution is EMPTY AND status not in ("Verified", "Closed") ORDER BY updated DESC`;
   return jiraSearch(jql);
 }

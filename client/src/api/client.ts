@@ -3,7 +3,7 @@ import { getToken, getAuthHeaders, clearToken } from "./token";
 import { fetchProject, updateProjectItemStatus } from "./github-graphql";
 import { setAssignees, addLabels, removeLabel, fetchRepoLabels } from "./github-rest";
 import { searchMilestoneIssues } from "./github-search";
-import { fetchJiraByFixVersion, fetchAllJiraTickets } from "./jira";
+import { fetchJiraByFixVersion, fetchJiraByFixVersions, fetchAllJiraTickets } from "./jira";
 import { invalidateCache } from "./cache";
 import { getOrg, getProjectNumber, getTeamMembers, getReleaseConfig } from "./config";
 
@@ -112,8 +112,11 @@ export const api = {
     return { ok: true };
   },
 
-  getJiraTickets: async (fixVersion?: string, sprint?: string): Promise<JiraTicket[]> => {
-    return fixVersion ? await fetchJiraByFixVersion(fixVersion, sprint) : await fetchAllJiraTickets(sprint);
+  getJiraTickets: async (fixVersion?: string | string[], sprint?: string): Promise<JiraTicket[]> => {
+    if (Array.isArray(fixVersion)) {
+      return fixVersion.length > 0 ? await fetchJiraByFixVersions(fixVersion, sprint) : await fetchAllJiraTickets();
+    }
+    return fixVersion ? await fetchJiraByFixVersion(fixVersion, sprint) : await fetchAllJiraTickets();
   },
 
   getMilestoneIssues: async (milestone: string): Promise<ProjectItem[]> => {

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../auth/middleware.ts";
-import { fetchJiraByFixVersion, fetchAllJiraTickets } from "../jira/client.ts";
+import { fetchJiraByFixVersion, fetchJiraByFixVersions, fetchAllJiraTickets } from "../jira/client.ts";
 import { dashboardConfig } from "../config.ts";
 import type { AppCache } from "../cache.ts";
 
@@ -9,10 +9,15 @@ export function jiraRouter(cache: AppCache): Router {
 
   router.get("/tickets", requireAuth, async (req, res) => {
     const fixVersion = req.query.fixVersion as string | undefined;
+    const fixVersions = req.query.fixVersions
+      ? (req.query.fixVersions as string).split(",")
+      : undefined;
     const sprint = req.query.sprint as string | undefined;
-    const cacheKey = fixVersion
-      ? `jira:tickets:${fixVersion}:${sprint ?? "all"}`
-      : `jira:tickets:all:${sprint ?? "all"}`;
+    const cacheKey = fixVersions
+      ? `jira:tickets:${fixVersions.join(",")}:${sprint ?? "all"}`
+      : fixVersion
+        ? `jira:tickets:${fixVersion}:${sprint ?? "all"}`
+        : `jira:tickets:all:${sprint ?? "all"}`;
     const cached = cache.get(cacheKey);
     if (cached) {
       res.json(cached);
@@ -20,9 +25,11 @@ export function jiraRouter(cache: AppCache): Router {
     }
 
     try {
-      const tickets = fixVersion
-        ? await fetchJiraByFixVersion(fixVersion, sprint)
-        : await fetchAllJiraTickets(sprint);
+      const tickets = fixVersions
+        ? await fetchJiraByFixVersions(fixVersions, sprint)
+        : fixVersion
+          ? await fetchJiraByFixVersion(fixVersion, sprint)
+          : await fetchAllJiraTickets();
       cache.set(cacheKey, tickets, dashboardConfig.polling.cacheTtlMs / 1000);
       res.json(tickets);
     } catch (err) {

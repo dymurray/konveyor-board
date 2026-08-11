@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback } from "react";
 import { api } from "../api/client";
 import type { JiraTicket } from "../types/project";
 
-export function useJiraTickets(intervalMs: number, fixVersion?: string, sprint?: string) {
+export function useJiraTickets(intervalMs: number, fixVersion?: string | string[], sprint?: string) {
   const [tickets, setTickets] = useState<JiraTicket[]>([]);
   const [loading, setLoading] = useState(true);
+  const fixVersionKey = Array.isArray(fixVersion) ? fixVersion.join(",") : (fixVersion ?? "");
 
   const fetchTickets = useCallback(async () => {
     try {
@@ -15,7 +16,8 @@ export function useJiraTickets(intervalMs: number, fixVersion?: string, sprint?:
     } finally {
       setLoading(false);
     }
-  }, [fixVersion, sprint]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fixVersionKey, sprint]);
 
   useEffect(() => {
     void fetchTickets();

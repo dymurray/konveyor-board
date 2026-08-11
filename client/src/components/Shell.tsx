@@ -23,30 +23,41 @@ export function Shell() {
   const [selectedItem, setSelectedItem] = useState<ProjectItem | null>(null);
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [releaseConfig, setReleaseConfig] = useState<ReleaseConfig | null>(null);
-  const [selectedVersionIndex, setSelectedVersionIndex] = useState(0);
+  const [selectedVersionIndex, setSelectedVersionIndex] = useState<number | null>(null);
   const [releaseFilterActive, setReleaseFilterActive] = useState(true);
 
   const { items: boardItems, setItems, projectNodeId, currentSprint, loading, error: projectError, secondsUntilRefresh, refresh } = useProjectItems(PROJECT_ID, POLL_INTERVAL);
   const { columns } = useProjectColumns(PROJECT_ID);
 
-  const selectedVersion = releaseConfig?.versions[selectedVersionIndex];
-  const activeMilestone = releaseFilterActive && selectedVersion ? selectedVersion.githubMilestone : undefined;
-  const activeFixVersion = releaseFilterActive && selectedVersion ? selectedVersion.jiraFixVersion : undefined;
+  const selectedVersion = selectedVersionIndex !== null ? releaseConfig?.versions[selectedVersionIndex] : null;
+
+  const activeMilestone = useMemo(() => {
+    if (!releaseFilterActive || !releaseConfig) return undefined;
+    if (selectedVersion) return selectedVersion.githubMilestone;
+    return releaseConfig.versions.map(v => v.githubMilestone);
+  }, [releaseFilterActive, releaseConfig, selectedVersion]);
+
+  const activeFixVersion = useMemo(() => {
+    if (!releaseFilterActive || !releaseConfig) return undefined;
+    if (selectedVersion) return selectedVersion.jiraFixVersion;
+    return releaseConfig.versions.map(v => v.jiraFixVersion);
+  }, [releaseFilterActive, releaseConfig, selectedVersion]);
+
+  const activeJiraSprint = releaseFilterActive && releaseConfig?.jiraSprint ? releaseConfig.jiraSprint : undefined;
 
   const { items: milestoneItems } = useMilestoneIssues(activeMilestone, POLL_INTERVAL);
-  const activeJiraSprint = releaseFilterActive && releaseConfig?.jiraSprint ? releaseConfig.jiraSprint : undefined;
   const { tickets: jiraTickets } = useJiraTickets(POLL_INTERVAL, activeFixVersion, activeJiraSprint);
 
   // Merge board items + milestone items, deduplicate by URL (board version wins — has status)
   const mergedItems = useMemo(() => {
     let activeBoardItems = boardItems;
-    if (releaseFilterActive && currentSprint) {
+    if (releaseFilterActive && selectedVersionIndex !== null && currentSprint) {
       activeBoardItems = boardItems.filter((i) => i.sprint === currentSprint);
     }
     const boardUrls = new Set(activeBoardItems.map((i) => i.url));
     const extraMilestoneItems = milestoneItems.filter((i) => !boardUrls.has(i.url));
     return [...activeBoardItems, ...extraMilestoneItems];
-  }, [boardItems, milestoneItems, releaseFilterActive, currentSprint]);
+  }, [boardItems, milestoneItems, releaseFilterActive, selectedVersionIndex, currentSprint]);
 
   const {
     filters,
@@ -150,6 +161,21 @@ export function Shell() {
               }} />
               <span style={{ color: "var(--text-primary)", fontWeight: 500 }}>Release:</span>
               <div style={{ display: "flex", gap: 2, background: "var(--bg-tertiary)", borderRadius: 4, padding: 2 }}>
+                <button
+                  onClick={() => { setSelectedVersionIndex(null); if (!releaseFilterActive) setReleaseFilterActive(true); }}
+                  style={{
+                    padding: "2px 8px",
+                    border: "none",
+                    borderRadius: 3,
+                    fontSize: 11,
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    background: releaseFilterActive && selectedVersionIndex === null ? "var(--bg-secondary)" : "transparent",
+                    color: releaseFilterActive && selectedVersionIndex === null ? "#4c9aff" : "var(--text-muted)",
+                  }}
+                >
+                  All
+                </button>
                 {releaseConfig.versions.map((v, i) => (
                   <button
                     key={v.jiraFixVersion}
