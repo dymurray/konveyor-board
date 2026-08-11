@@ -51,13 +51,13 @@ export function Shell() {
   // Merge board items + milestone items, deduplicate by URL (board version wins — has status)
   const mergedItems = useMemo(() => {
     let activeBoardItems = boardItems;
-    if (releaseFilterActive && selectedVersionIndex !== null && currentSprint) {
+    if (releaseFilterActive && currentSprint) {
       activeBoardItems = boardItems.filter((i) => i.sprint === currentSprint);
     }
     const boardUrls = new Set(activeBoardItems.map((i) => i.url));
     const extraMilestoneItems = milestoneItems.filter((i) => !boardUrls.has(i.url));
     return [...activeBoardItems, ...extraMilestoneItems];
-  }, [boardItems, milestoneItems, releaseFilterActive, selectedVersionIndex, currentSprint]);
+  }, [boardItems, milestoneItems, releaseFilterActive, currentSprint]);
 
   const {
     filters,
