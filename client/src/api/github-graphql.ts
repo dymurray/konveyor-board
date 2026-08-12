@@ -3,7 +3,8 @@ import { getAuthHeaders } from "./token";
 import { transformProjectItems, transformProjectColumns } from "./transform";
 import { getCached, setCache } from "./cache";
 
-const GITHUB_GRAPHQL = "https://api.github.com/graphql";
+const GITHUB_API = import.meta.env.VITE_GITHUB_API || "https://api.github.com";
+const GITHUB_GRAPHQL = `${GITHUB_API}/graphql`;
 const CACHE_TTL = 60_000;
 
 const PROJECT_QUERY = `

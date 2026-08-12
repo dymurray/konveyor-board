@@ -1,7 +1,7 @@
 import type { ProjectItem } from "../types/project";
 import { getAuthHeaders } from "./token";
 
-const GITHUB_API = "https://api.github.com";
+const GITHUB_API = import.meta.env.VITE_GITHUB_API || "https://api.github.com";
 
 export async function searchMilestoneIssues(
   org: string,

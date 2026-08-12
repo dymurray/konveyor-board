@@ -1,6 +1,6 @@
 import { getAuthHeaders } from "./token";
 
-const GITHUB_API = "https://api.github.com";
+const GITHUB_API = import.meta.env.VITE_GITHUB_API || "https://api.github.com";
 
 async function githubFetch(path: string, opts?: RequestInit): Promise<Response> {
   const res = await fetch(`${GITHUB_API}${path}`, {
