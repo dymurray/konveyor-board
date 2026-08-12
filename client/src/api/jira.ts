@@ -1,9 +1,9 @@
 import type { JiraTicket } from "../types/project";
 import { getJiraCredentials, getJiraProxyUrl } from "./token";
 
-const JIRA_BASE = "https://redhat.atlassian.net";
+const JIRA_BASE = import.meta.env.VITE_JIRA_URL || "https://redhat.atlassian.net";
 const JIRA_BROWSE = `${JIRA_BASE}/browse`;
-const JIRA_API = `${JIRA_BASE}/rest/api/3`;
+const JIRA_PROXY = import.meta.env.VITE_JIRA_PROXY as string | undefined;
 
 function getJiraAuthHeader(email: string, apiToken: string): string {
   return "Basic " + btoa(`${email}:${apiToken}`);
@@ -25,28 +25,43 @@ function transformJiraIssues(issues: any[]): JiraTicket[] {
   }));
 }
 
-async function jiraSearch(jql: string): Promise<JiraTicket[]> {
-  const creds = getJiraCredentials();
-  const proxyUrl = getJiraProxyUrl();
-  if (!creds || !proxyUrl) return [];
+const JIRA_FIELDS = ["summary", "status", "priority", "issuetype", "assignee", "updated", "created", "fixVersions"];
 
-  const targetUrl = `${JIRA_API}/search/jql`;
+async function jiraSearch(jql: string): Promise<JiraTicket[]> {
   const body = JSON.stringify({
     jql,
     maxResults: 200,
-    fields: ["summary", "status", "priority", "issuetype", "assignee", "updated", "created", "fixVersions"],
+    fields: JIRA_FIELDS,
   });
 
-  const res = await fetch(proxyUrl, {
-    method: "POST",
-    headers: {
-      Authorization: getJiraAuthHeader(creds.email, creds.apiToken),
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      "X-Target-Url": targetUrl,
-    },
-    body,
-  });
+  let res: Response;
+
+  if (JIRA_PROXY) {
+    res = await fetch(`${JIRA_PROXY}/rest/api/3/search/jql`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body,
+    });
+  } else {
+    const creds = getJiraCredentials();
+    const proxyUrl = getJiraProxyUrl();
+    if (!creds || !proxyUrl) return [];
+
+    const targetUrl = `${JIRA_BASE}/rest/api/3/search/jql`;
+    res = await fetch(proxyUrl, {
+      method: "POST",
+      headers: {
+        Authorization: getJiraAuthHeader(creds.email, creds.apiToken),
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "X-Target-Url": targetUrl,
+      },
+      body,
+    });
+  }
 
   if (!res.ok) {
     const text = await res.text();

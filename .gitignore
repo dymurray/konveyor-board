@@ -1,5 +1,6 @@
 node_modules/
 dist/
 .env
+.env.caddy
 *.tsbuildinfo
 team-config.json

@@ -1,0 +1,23 @@
+:8080 {
+	handle /proxy/github/* {
+		uri strip_prefix /proxy/github
+		reverse_proxy https://api.github.com {
+			header_up Host api.github.com
+			header_up Authorization "Bearer {$GITHUB_TOKEN}"
+		}
+	}
+
+	handle /proxy/jira/* {
+		uri strip_prefix /proxy/jira
+		reverse_proxy {$JIRA_UPSTREAM} {
+			header_up Host {$JIRA_HOST}
+			header_up Authorization "Basic {$JIRA_AUTH_BASE64}"
+		}
+	}
+
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

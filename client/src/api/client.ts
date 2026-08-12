@@ -92,7 +92,8 @@ export const api = {
     const token = getToken();
     if (!token) handleAuthError();
 
-    const res = await fetch("https://api.github.com/user", {
+    const githubApi = import.meta.env.VITE_GITHUB_API || "https://api.github.com";
+    const res = await fetch(`${githubApi}/user`, {
       headers: getAuthHeaders(),
     });
 
