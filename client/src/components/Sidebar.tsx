@@ -20,6 +20,7 @@ interface SidebarProps {
   team: TeamMember[];
   secondsUntilRefresh: number;
   onRefresh: () => void;
+  onOpenSettings: () => void;
 }
 
 const viewOptions: { key: ViewType; icon: string; label: string }[] = [
@@ -44,6 +45,7 @@ export function Sidebar({
   team,
   secondsUntilRefresh,
   onRefresh,
+  onOpenSettings,
 }: SidebarProps) {
   const hasFilters = filters.repos.length > 0 || filters.assignees.length > 0 || filters.labels.length > 0 || filters.milestones.length > 0;
 
@@ -62,7 +64,25 @@ export function Sidebar({
         height: "100vh",
       }}
     >
-      <div style={{ fontWeight: "bold", fontSize: 16, color: "#fff" }}>Konveyor Board</div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <div style={{ fontWeight: "bold", fontSize: 16, color: "#fff" }}>Konveyor Board</div>
+        <button
+          onClick={onOpenSettings}
+          title="Settings"
+          aria-label="Settings"
+          style={{
+            background: "none",
+            border: "none",
+            color: "var(--text-secondary)",
+            fontSize: 16,
+            lineHeight: 1,
+            padding: 4,
+            borderRadius: 4,
+          }}
+        >
+          ⚙
+        </button>
+      </div>
 
       <div>
         <div style={{ fontSize: 10, textTransform: "uppercase", color: "var(--text-secondary)", marginBottom: 8, letterSpacing: 0.5 }}>

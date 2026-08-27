@@ -4,6 +4,7 @@ import { BoardView } from "./BoardView";
 import { ListView } from "./ListView";
 import { EngineerView } from "./EngineerView";
 import { DetailPanel } from "./DetailPanel";
+import { SettingsPanel } from "./SettingsPanel";
 import { ToastContainer, showToast } from "./Toast";
 import { useProjectItems } from "../hooks/useProjectItems";
 import { useProjectColumns } from "../hooks/useProjectColumns";
@@ -13,14 +14,21 @@ import { useJiraTickets } from "../hooks/useJiraTickets";
 import { useMilestoneIssues } from "../hooks/useMilestoneIssues";
 import { api } from "../api/client";
 import { getProjectNumber, getPollInterval } from "../api/config";
-import type { ProjectItem, TeamMember, ReleaseConfig } from "../types/project";
+import type { ProjectItem, TeamMember, ReleaseConfig, AuthUser } from "../types/project";
 
 const PROJECT_ID = getProjectNumber();
 const POLL_INTERVAL = getPollInterval();
 
-export function Shell() {
+interface ShellProps {
+  user: AuthUser | null;
+  onUserChange: (user: AuthUser) => void;
+  onSignOut: () => void;
+}
+
+export function Shell({ user, onUserChange, onSignOut }: ShellProps) {
   const [view, setView] = useState<ViewType>("board");
   const [selectedItem, setSelectedItem] = useState<ProjectItem | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [releaseConfig, setReleaseConfig] = useState<ReleaseConfig | null>(null);
   const [selectedVersionIndex, setSelectedVersionIndex] = useState<number | null>(null);
@@ -46,7 +54,7 @@ export function Shell() {
   const activeJiraSprint = releaseFilterActive && releaseConfig?.jiraSprint ? releaseConfig.jiraSprint : undefined;
 
   const { items: milestoneItems } = useMilestoneIssues(activeMilestone, POLL_INTERVAL);
-  const { tickets: jiraTickets } = useJiraTickets(POLL_INTERVAL, activeFixVersion, activeJiraSprint);
+  const { tickets: jiraTickets, refresh: refreshJira } = useJiraTickets(POLL_INTERVAL, activeFixVersion, activeJiraSprint);
 
   // Merge board items + milestone items, deduplicate by URL (board version wins — has status)
   const mergedItems = useMemo(() => {
@@ -108,15 +116,42 @@ export function Shell() {
     );
   }
 
+  // Rendered from both the error screen and the normal shell — a bad token is
+  // exactly when you need to get at the settings.
+  const settingsPanel = showSettings ? (
+    <SettingsPanel
+      user={user}
+      onClose={() => setShowSettings(false)}
+      onUserChange={onUserChange}
+      onSaved={() => { void refresh(); void refreshJira(); }}
+      onSignOut={onSignOut}
+    />
+  ) : null;
+
   if (projectError && boardItems.length === 0) {
+    const buttonStyle: React.CSSProperties = {
+      padding: "6px 16px",
+      background: "var(--bg-tertiary)",
+      border: "1px solid var(--border)",
+      borderRadius: 6,
+      color: "var(--text-primary)",
+      cursor: "pointer",
+      fontSize: 13,
+    };
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100vh", gap: 12 }}>
         <div style={{ color: "#f85149", fontSize: 14, maxWidth: 500, textAlign: "center" }}>
           Failed to load project data: {projectError}
         </div>
-        <button onClick={() => void refresh()} style={{ padding: "6px 16px", background: "var(--bg-tertiary)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text-primary)", cursor: "pointer", fontSize: 13 }}>
-          Retry
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => void refresh()} style={buttonStyle}>
+            Retry
+          </button>
+          <button onClick={() => setShowSettings(true)} style={buttonStyle}>
+            ⚙ Settings
+          </button>
+        </div>
+        {settingsPanel}
       </div>
     );
   }
@@ -139,6 +174,7 @@ export function Shell() {
         team={team}
         secondsUntilRefresh={secondsUntilRefresh}
         onRefresh={refresh}
+        onOpenSettings={() => setShowSettings(true)}
       />
       <main style={{ flex: 1, overflow: "auto", position: "relative" }}>
         {releaseConfig && releaseConfig.versions.length > 0 && (
@@ -235,6 +271,7 @@ export function Shell() {
           onUpdateLabels={updateLabels}
         />
       )}
+      {settingsPanel}
       <ToastContainer />
     </div>
   );
