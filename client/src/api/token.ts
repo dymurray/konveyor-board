@@ -51,6 +51,25 @@ export function getJiraProxyUrl(): string | null {
   return localStorage.getItem(PROXY_KEY);
 }
 
+/**
+ * Accepts what people actually paste - a bare host like
+ * "my-proxy.workers.dev" - instead of rejecting it. Returns null if the value
+ * cannot be read as a URL at all.
+ */
+export function normaliseProxyUrl(raw: string): string | null {
+  const isLocal = /^(localhost|127\.0\.0\.1)(:|\/|$)/i.test(raw);
+  const withScheme = /^https?:\/\//i.test(raw)
+    ? raw
+    : `${isLocal ? "http" : "https"}://${raw}`;
+  try {
+    const url = new URL(withScheme);
+    if (!url.hostname.includes(".") && url.hostname !== "localhost") return null;
+    return url.toString().replace(/\/$/, "");
+  } catch {
+    return null;
+  }
+}
+
 export function setJiraProxyUrl(url: string): void {
   localStorage.setItem(PROXY_KEY, url);
 }

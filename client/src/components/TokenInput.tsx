@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { getJiraCredentials, getJiraProxyUrl, setJiraCredentials, setJiraProxyUrl } from "../api/token";
+import { getJiraCredentials, getJiraProxyUrl, normaliseProxyUrl, setJiraCredentials, setJiraProxyUrl } from "../api/token";
+import { DEV_JIRA_PROXY_AVAILABLE } from "../api/jira";
+import { useConnectionTests } from "../hooks/useConnectionTests";
+import { TestButton, CheckList } from "./ConnectionCheck";
 
 interface TokenInputProps {
   onSubmit: (pat: string) => void;
@@ -13,6 +16,8 @@ export function TokenInput({ onSubmit, error }: TokenInputProps) {
   const [jiraToken, setJiraToken] = useState(() => getJiraCredentials()?.apiToken ?? "");
   const [proxyUrl, setProxyUrl] = useState(() => getJiraProxyUrl() ?? "");
   const [submitting, setSubmitting] = useState(false);
+  const [proxyError, setProxyError] = useState<string | null>(null);
+  const { githubTest, setGithubTest, testingGithub, testGithub, jiraTest, setJiraTest, testingJira, testJira } = useConnectionTests();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,8 +27,15 @@ export function TokenInput({ onSubmit, error }: TokenInputProps) {
     if (jiraEmail && jiraToken) {
       setJiraCredentials({ email: jiraEmail, apiToken: jiraToken });
     }
-    if (proxyUrl) {
-      setJiraProxyUrl(proxyUrl);
+    if (proxyUrl.trim()) {
+      const normalised = normaliseProxyUrl(proxyUrl.trim());
+      if (!normalised) {
+        setProxyError(`"${proxyUrl.trim()}" is not a valid URL.`);
+        setShowJira(true);
+        setSubmitting(false);
+        return;
+      }
+      setJiraProxyUrl(normalised);
     }
 
     onSubmit(pat.trim());
@@ -55,7 +67,7 @@ export function TokenInput({ onSubmit, error }: TokenInputProps) {
           <input
             type="password"
             value={pat}
-            onChange={(e) => setPat(e.target.value)}
+            onChange={(e) => { setPat(e.target.value); setGithubTest(null); }}
             placeholder="ghp_... or github_pat_..."
             style={inputStyle}
             autoFocus
@@ -73,6 +85,8 @@ export function TokenInput({ onSubmit, error }: TokenInputProps) {
               Create a token
             </a>
           </div>
+          <TestButton onClick={() => void testGithub(pat)} testing={testingGithub} disabled={!pat.trim()} />
+          {githubTest && <CheckList result={githubTest} />}
         </div>
 
         {error && (
@@ -104,15 +118,34 @@ export function TokenInput({ onSubmit, error }: TokenInputProps) {
             </div>
             <div>
               <label style={{ display: "block", fontSize: 12, color: "var(--text-secondary)", marginBottom: 4 }}>Jira Email</label>
-              <input type="email" value={jiraEmail} onChange={(e) => setJiraEmail(e.target.value)} placeholder="you@redhat.com" style={{ ...inputStyle, fontSize: 13 }} />
+              <input type="email" value={jiraEmail} onChange={(e) => { setJiraEmail(e.target.value); setJiraTest(null); }} placeholder="you@redhat.com" style={{ ...inputStyle, fontSize: 13 }} />
             </div>
             <div>
               <label style={{ display: "block", fontSize: 12, color: "var(--text-secondary)", marginBottom: 4 }}>Jira API Token</label>
-              <input type="password" value={jiraToken} onChange={(e) => setJiraToken(e.target.value)} placeholder="Atlassian API token" style={{ ...inputStyle, fontSize: 13 }} />
+              <input type="password" value={jiraToken} onChange={(e) => { setJiraToken(e.target.value); setJiraTest(null); }} placeholder="Atlassian API token" style={{ ...inputStyle, fontSize: 13 }} />
             </div>
             <div>
               <label style={{ display: "block", fontSize: 12, color: "var(--text-secondary)", marginBottom: 4 }}>CORS Proxy URL</label>
-              <input type="url" value={proxyUrl} onChange={(e) => setProxyUrl(e.target.value)} placeholder="https://your-proxy.workers.dev" style={{ ...inputStyle, fontSize: 13 }} />
+              <input
+                type="text"
+                inputMode="url"
+                spellCheck={false}
+                value={proxyUrl}
+                onChange={(e) => { setProxyUrl(e.target.value); setProxyError(null); setJiraTest(null); }}
+                placeholder="https://your-proxy.workers.dev"
+                style={{ ...inputStyle, fontSize: 13 }}
+              />
+              {proxyError && (
+                <div style={{ fontSize: 11, color: "#f85149", marginTop: 4 }}>{proxyError}</div>
+              )}
+            </div>
+            <div>
+              <TestButton
+                onClick={() => void testJira(jiraEmail, jiraToken, proxyUrl)}
+                testing={testingJira}
+                disabled={!(jiraEmail.trim() && jiraToken.trim() && (DEV_JIRA_PROXY_AVAILABLE || proxyUrl.trim()))}
+              />
+              {jiraTest && <CheckList result={jiraTest} />}
             </div>
           </div>
         )}

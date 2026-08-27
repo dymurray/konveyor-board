@@ -1,5 +1,5 @@
 import type { ProjectItem, ProjectColumn, Label, TeamMember, AuthUser, JiraTicket, ReleaseConfig } from "../types/project";
-import { getToken, getAuthHeaders, clearToken } from "./token";
+import { getToken, clearToken } from "./token";
 import { fetchProject, updateProjectItemStatus } from "./github-graphql";
 import { setAssignees, addLabels, removeLabel, fetchRepoLabels } from "./github-rest";
 import { searchMilestoneIssues } from "./github-search";
@@ -88,16 +88,18 @@ export const api = {
     return getTeamMembers();
   },
 
-  getMe: async (): Promise<AuthUser> => {
-    const token = getToken();
-    if (!token) handleAuthError();
-
+  // Checks a candidate PAT without touching the stored one, so a typo in the
+  // settings panel does not sign the user out.
+  validateToken: async (pat: string): Promise<AuthUser> => {
     const githubApi = import.meta.env.VITE_GITHUB_API || "https://api.github.com";
     const res = await fetch(`${githubApi}/user`, {
-      headers: getAuthHeaders(),
+      headers: {
+        Authorization: `Bearer ${pat}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
     });
 
-    if (res.status === 401) handleAuthError();
     if (!res.ok) throw new ApiError(res.status, `GitHub user API error: ${res.statusText}`);
 
     const data = await res.json();
@@ -106,6 +108,18 @@ export const api = {
       avatarUrl: data.avatar_url,
       name: data.name ?? data.login,
     };
+  },
+
+  getMe: async (): Promise<AuthUser> => {
+    const token = getToken();
+    if (!token) handleAuthError();
+
+    try {
+      return await api.validateToken(token);
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 401) handleAuthError();
+      throw e;
+    }
   },
 
   logout: async (): Promise<{ ok: boolean }> => {

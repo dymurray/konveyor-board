@@ -3,7 +3,7 @@ import { Shell } from "./components/Shell";
 import { TokenInput } from "./components/TokenInput";
 
 export function App() {
-  const { user, loading, login, error } = useAuth();
+  const { user, setUser, loading, login, logout, error } = useAuth();
 
   if (loading) {
     return (
@@ -17,5 +17,5 @@ export function App() {
     return <TokenInput onSubmit={login} error={error} />;
   }
 
-  return <Shell />;
+  return <Shell user={user} onUserChange={setUser} onSignOut={() => void logout()} />;
 }
