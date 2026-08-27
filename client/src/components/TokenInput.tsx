@@ -24,8 +24,8 @@ export function TokenInput({ onSubmit, error }: TokenInputProps) {
     if (!pat.trim()) return;
     setSubmitting(true);
 
-    if (jiraEmail && jiraToken) {
-      setJiraCredentials({ email: jiraEmail, apiToken: jiraToken });
+    if (jiraEmail.trim() && jiraToken.trim()) {
+      setJiraCredentials({ email: jiraEmail.trim(), apiToken: jiraToken.trim() });
     }
     if (proxyUrl.trim()) {
       const normalised = normaliseProxyUrl(proxyUrl.trim());

@@ -1,5 +1,5 @@
 import type { JiraTicket } from "../types/project";
-import { getJiraCredentials, getJiraProxyUrl } from "./token";
+import { getJiraCredentials, getJiraProxyUrl, normaliseProxyUrl } from "./token";
 
 const JIRA_BASE = import.meta.env.VITE_JIRA_URL || "https://redhat.atlassian.net";
 const JIRA_BROWSE = `${JIRA_BASE}/browse`;
@@ -23,7 +23,23 @@ const DEV_JIRA_PROXY_REGISTERED =
 export const DEV_JIRA_PROXY_AVAILABLE = import.meta.env.DEV && DEV_JIRA_PROXY_REGISTERED;
 
 function resolveProxyTarget(stored: string | null): string | null {
-  return DEV_JIRA_PROXY_AVAILABLE ? DEV_PROXY_PATH : stored;
+  if (DEV_JIRA_PROXY_AVAILABLE) return DEV_PROXY_PATH;
+  if (!stored) return stored;
+  // Normalise on the read path too: a value stored before normaliseProxyUrl
+  // existed (e.g. a bare "my-proxy.workers.dev" with no scheme) would otherwise
+  // be handed to fetch() and resolved relative to the app origin. Fall back to
+  // the raw value only if it cannot be parsed at all.
+  return normaliseProxyUrl(stored) ?? stored;
+}
+
+// Jira counts as configured when a build-time proxy is baked in, or the user
+// has stored credentials plus a way to reach Jira (a proxy URL, or the dev
+// proxy in `vite dev`). Used to keep the sync panel from showing a green
+// "updated" for a Jira that was never set up.
+export function isJiraConfigured(): boolean {
+  if (JIRA_PROXY) return true;
+  if (!getJiraCredentials()) return false;
+  return DEV_JIRA_PROXY_AVAILABLE || Boolean(getJiraProxyUrl());
 }
 
 function getJiraAuthHeader(email: string, apiToken: string): string {
@@ -76,7 +92,12 @@ async function jiraSearch(jql: string): Promise<JiraTicket[]> {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const data = (await res.json()) as { issues?: any[] };
-  return transformJiraIssues(data.issues ?? []);
+  // A genuinely empty result still returns `issues: []`; a 200 with no issues
+  // array at all is a malformed/interstitial response from the proxy. Throw so
+  // useJiraTickets' catch keeps the last-known tickets instead of silently
+  // blanking every Jira card and flipping the sync dot to a green "updated".
+  if (!Array.isArray(data.issues)) throw new Error("Jira search response had no issues array");
+  return transformJiraIssues(data.issues);
 }
 
 export async function fetchJiraByFixVersion(fixVersion: string, sprint?: string): Promise<JiraTicket[]> {

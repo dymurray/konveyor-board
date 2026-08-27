@@ -1,23 +1,35 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "../api/client";
+import { isJiraConfigured } from "../api/jira";
+import { useSyncState } from "./useSyncState";
 import type { JiraTicket } from "../types/project";
 
 export function useJiraTickets(intervalMs: number, fixVersion?: string | string[], sprint?: string) {
   const [tickets, setTickets] = useState<JiraTicket[]>([]);
   const [loading, setLoading] = useState(true);
+  const { sync, markSyncing, markSynced, markIdle, markError } = useSyncState();
   const fixVersionKey = Array.isArray(fixVersion) ? fixVersion.join(",") : (fixVersion ?? "");
 
   const fetchTickets = useCallback(async () => {
+    if (!isJiraConfigured()) {
+      setTickets([]);
+      setLoading(false);
+      markIdle("not configured");
+      return;
+    }
+    markSyncing();
     try {
       const data = await api.getJiraTickets(fixVersion, sprint);
       setTickets(data);
+      markSynced();
     } catch {
       // JIRA may not be configured — fail silently
+      markError("fetch failed");
     } finally {
       setLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fixVersionKey, sprint]);
+  }, [fixVersionKey, sprint, markSyncing, markSynced, markIdle, markError]);
 
   useEffect(() => {
     void fetchTickets();
@@ -29,5 +41,5 @@ export function useJiraTickets(intervalMs: number, fixVersion?: string | string[
     await fetchTickets();
   }, [fetchTickets]);
 
-  return { tickets, loading, refresh };
+  return { tickets, loading, sync, refresh };
 }

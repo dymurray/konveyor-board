@@ -95,6 +95,19 @@ export function SettingsPanel({ user, onClose, onUserChange, onSaved, onSignOut 
       return;
     }
 
+    // Validate the proxy URL up front, before anything is persisted, so an
+    // invalid value can't leave the token and Jira credentials half-saved with
+    // no cache refresh and no "saved" confirmation.
+    const trimmedProxy = proxyUrl.trim();
+    let normalisedProxy: string | null = null;
+    if (trimmedProxy) {
+      normalisedProxy = normaliseProxyUrl(trimmedProxy);
+      if (!normalisedProxy) {
+        setError(`"${trimmedProxy}" is not a valid URL.`);
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       // Validate before storing, so a bad paste does not lock the user out.
@@ -112,15 +125,9 @@ export function SettingsPanel({ user, onClose, onUserChange, onSaved, onSignOut 
         setHasStoredJira(true);
       }
 
-      if (proxyUrl.trim()) {
-        const normalised = normaliseProxyUrl(proxyUrl.trim());
-        if (!normalised) {
-          setError(`"${proxyUrl.trim()}" is not a valid URL.`);
-          setSaving(false);
-          return;
-        }
-        setProxyUrl(normalised);
-        setJiraProxyUrl(normalised);
+      if (normalisedProxy) {
+        setProxyUrl(normalisedProxy);
+        setJiraProxyUrl(normalisedProxy);
         setHasStoredJira(true);
       }
 

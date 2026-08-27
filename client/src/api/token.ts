@@ -1,3 +1,5 @@
+import { invalidateCache } from "./cache";
+
 const PAT_KEY = "github_pat";
 const JIRA_KEY = "jira_credentials";
 const PROXY_KEY = "jira_proxy_url";
@@ -12,6 +14,10 @@ export function setToken(token: string): void {
 
 export function clearToken(): void {
   localStorage.removeItem(PAT_KEY);
+  // Drop the persisted board snapshot too: every sign-out / auth-failure path
+  // funnels through here, and the cache now survives on disk, so a new (or
+  // different) account must never render the previous session's cached board.
+  invalidateCache("project:");
 }
 
 export function getAuthHeaders(): HeadersInit {
