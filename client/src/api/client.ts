@@ -1,6 +1,6 @@
 import type { ProjectItem, ProjectColumn, Label, TeamMember, AuthUser, JiraTicket, ReleaseConfig } from "../types/project";
 import { getToken, clearToken } from "./token";
-import { fetchProject, updateProjectItemStatus } from "./github-graphql";
+import { fetchProject, getPersistedProject, updateProjectItemStatus } from "./github-graphql";
 import { setAssignees, addLabels, removeLabel, fetchRepoLabels } from "./github-rest";
 import { searchMilestoneIssues } from "./github-search";
 import { fetchJiraByFixVersion, fetchJiraByFixVersions, fetchAllJiraTickets } from "./jira";
@@ -49,6 +49,16 @@ export const api = {
       if (e instanceof Error && e.message.includes("401")) handleAuthError();
       throw e;
     }
+  },
+
+  // Sync last-known snapshots for instant render on load, before revalidation.
+  getCachedItems: (projectId: number) => {
+    const r = getPersistedProject(getOrg(), projectId || getProjectNumber());
+    return r ? { projectNodeId: r.projectNodeId, items: r.items, currentSprint: r.currentSprint } : null;
+  },
+
+  getCachedColumns: (projectId: number): ProjectColumn[] | null => {
+    return getPersistedProject(getOrg(), projectId || getProjectNumber())?.columns ?? null;
   },
 
   updateStatus: async (_projectId: number, itemId: string, body: { fieldId: string; optionId: string; projectId: string }): Promise<{ ok: boolean }> => {

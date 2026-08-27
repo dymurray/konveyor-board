@@ -1,18 +1,22 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "../api/client";
+import { useSyncState } from "./useSyncState";
 import type { ProjectItem } from "../types/project";
 
 export function useMilestoneIssues(milestone: string | string[] | undefined, intervalMs: number) {
   const [items, setItems] = useState<ProjectItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const { sync, markSyncing, markSynced, markError } = useSyncState();
   const milestoneKey = Array.isArray(milestone) ? milestone.join(",") : (milestone ?? "");
 
   const fetchItems = useCallback(async () => {
     if (!milestone || (Array.isArray(milestone) && milestone.length === 0)) {
       setItems([]);
       setLoading(false);
+      markSynced();
       return;
     }
+    markSyncing();
     try {
       const milestones = Array.isArray(milestone) ? milestone : [milestone];
       const results = await Promise.all(milestones.map(m => api.getMilestoneIssues(m)));
@@ -27,13 +31,14 @@ export function useMilestoneIssues(milestone: string | string[] | undefined, int
         }
       }
       setItems(merged);
+      markSynced();
     } catch {
-      // fail silently
+      markError("fetch failed");
     } finally {
       setLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [milestoneKey]);
+  }, [milestoneKey, markSyncing, markSynced, markError]);
 
   useEffect(() => {
     void fetchItems();
@@ -41,5 +46,9 @@ export function useMilestoneIssues(milestone: string | string[] | undefined, int
     return () => clearInterval(poll);
   }, [fetchItems, intervalMs]);
 
-  return { items, loading };
+  const refresh = useCallback(async () => {
+    await fetchItems();
+  }, [fetchItems]);
+
+  return { items, loading, sync, refresh };
 }

@@ -1,11 +1,12 @@
 import type { ProjectItem, ProjectColumn } from "../types/project";
 import { getAuthHeaders } from "./token";
 import { transformProjectItems, transformProjectColumns } from "./transform";
-import { getCached, setCache } from "./cache";
+import { getCached, getStale, setCache } from "./cache";
+import { getCacheTtl } from "./config";
 
 const GITHUB_API = import.meta.env.VITE_GITHUB_API || "https://api.github.com";
 const GITHUB_GRAPHQL = `${GITHUB_API}/graphql`;
-const CACHE_TTL = 60_000;
+const CACHE_TTL = getCacheTtl();
 
 const PROJECT_QUERY = `
   query($org: String!, $projectNumber: Int!, $cursor: String) {
@@ -79,14 +80,48 @@ export interface FetchProjectResult {
   currentSprint: string | null;
 }
 
-export async function fetchProject(
+type ProjectProgressListener = (itemsLoaded: number, done: boolean) => void;
+const progressListeners = new Set<ProjectProgressListener>();
+
+// The board is the only paginated source, and the app tracks a single project,
+// so a flat listener set is enough - no need to key by project.
+export function onProjectFetchProgress(fn: ProjectProgressListener): () => void {
+  progressListeners.add(fn);
+  return () => progressListeners.delete(fn);
+}
+
+const inflight = new Map<string, Promise<FetchProjectResult>>();
+
+function projectCacheKey(org: string, projectNumber: number): string {
+  return `project:${org}:${projectNumber}`;
+}
+
+// Last-known project data (even if stale) for rendering instantly on load.
+export function getPersistedProject(org: string, projectNumber: number): FetchProjectResult | null {
+  return getStale<FetchProjectResult>(projectCacheKey(org, projectNumber)) ?? null;
+}
+
+export function fetchProject(org: string, projectNumber: number): Promise<FetchProjectResult> {
+  const cacheKey = projectCacheKey(org, projectNumber);
+  const cached = getCached<FetchProjectResult>(cacheKey);
+  if (cached) return Promise.resolve(cached);
+
+  // Collapse concurrent callers (getItems + getColumns) onto one request.
+  const existing = inflight.get(cacheKey);
+  if (existing) return existing;
+
+  const pending = fetchProjectUncached(org, projectNumber, cacheKey).finally(() => {
+    inflight.delete(cacheKey);
+  });
+  inflight.set(cacheKey, pending);
+  return pending;
+}
+
+async function fetchProjectUncached(
   org: string,
   projectNumber: number,
+  cacheKey: string,
 ): Promise<FetchProjectResult> {
-  const cacheKey = `project:${org}:${projectNumber}`;
-  const cached = getCached<FetchProjectResult>(cacheKey);
-  if (cached) return cached;
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let allItemNodes: any[] = [];
   let columns: ProjectColumn[] = [];
@@ -154,6 +189,7 @@ export async function fetchProject(
     allItemNodes = allItemNodes.concat(project.items.nodes);
     hasNextPage = project.items.pageInfo.hasNextPage;
     cursor = project.items.pageInfo.endCursor;
+    for (const fn of progressListeners) fn(allItemNodes.length, !hasNextPage);
   }
 
   const result: FetchProjectResult = {

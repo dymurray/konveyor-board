@@ -34,7 +34,7 @@ export function Shell({ user, onUserChange, onSignOut }: ShellProps) {
   const [selectedVersionIndex, setSelectedVersionIndex] = useState<number | null>(null);
   const [releaseFilterActive, setReleaseFilterActive] = useState(true);
 
-  const { items: boardItems, setItems, projectNodeId, currentSprint, loading, error: projectError, secondsUntilRefresh, refresh } = useProjectItems(PROJECT_ID, POLL_INTERVAL);
+  const { items: boardItems, setItems, projectNodeId, currentSprint, loading, error: projectError, sync: boardSync, secondsUntilRefresh, refresh } = useProjectItems(PROJECT_ID, POLL_INTERVAL);
   const { columns } = useProjectColumns(PROJECT_ID);
 
   const selectedVersion = selectedVersionIndex !== null ? releaseConfig?.versions[selectedVersionIndex] : null;
@@ -53,8 +53,14 @@ export function Shell({ user, onUserChange, onSignOut }: ShellProps) {
 
   const activeJiraSprint = releaseFilterActive && releaseConfig?.jiraSprint ? releaseConfig.jiraSprint : undefined;
 
-  const { items: milestoneItems } = useMilestoneIssues(activeMilestone, POLL_INTERVAL);
-  const { tickets: jiraTickets, refresh: refreshJira } = useJiraTickets(POLL_INTERVAL, activeFixVersion, activeJiraSprint);
+  const { items: milestoneItems, sync: milestoneSync, refresh: refreshMilestones } = useMilestoneIssues(activeMilestone, POLL_INTERVAL);
+  const { tickets: jiraTickets, sync: jiraSync, refresh: refreshJira } = useJiraTickets(POLL_INTERVAL, activeFixVersion, activeJiraSprint);
+
+  const syncSources = useMemo(() => [
+    { label: "GitHub board", sync: boardSync },
+    { label: "Milestones", sync: milestoneSync },
+    { label: "Jira", sync: jiraSync },
+  ], [boardSync, milestoneSync, jiraSync]);
 
   // Merge board items + milestone items, deduplicate by URL (board version wins — has status)
   const mergedItems = useMemo(() => {
@@ -123,7 +129,7 @@ export function Shell({ user, onUserChange, onSignOut }: ShellProps) {
       user={user}
       onClose={() => setShowSettings(false)}
       onUserChange={onUserChange}
-      onSaved={() => { void refresh(); void refreshJira(); }}
+      onSaved={() => { void refresh(); void refreshJira(); void refreshMilestones(); }}
       onSignOut={onSignOut}
     />
   ) : null;
@@ -175,6 +181,7 @@ export function Shell({ user, onUserChange, onSignOut }: ShellProps) {
         secondsUntilRefresh={secondsUntilRefresh}
         onRefresh={refresh}
         onOpenSettings={() => setShowSettings(true)}
+        syncSources={syncSources}
       />
       <main style={{ flex: 1, overflow: "auto", position: "relative" }}>
         {releaseConfig && releaseConfig.versions.length > 0 && (

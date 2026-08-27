@@ -1,4 +1,5 @@
 import { FilterDropdown } from "./FilterDropdown";
+import { SyncStatus, type SyncSource } from "./SyncStatus";
 import type { Filters } from "../hooks/useFilters";
 import type { TeamMember } from "../types/project";
 
@@ -21,6 +22,7 @@ interface SidebarProps {
   secondsUntilRefresh: number;
   onRefresh: () => void;
   onOpenSettings: () => void;
+  syncSources: SyncSource[];
 }
 
 const viewOptions: { key: ViewType; icon: string; label: string }[] = [
@@ -46,6 +48,7 @@ export function Sidebar({
   secondsUntilRefresh,
   onRefresh,
   onOpenSettings,
+  syncSources,
 }: SidebarProps) {
   const hasFilters = filters.repos.length > 0 || filters.assignees.length > 0 || filters.labels.length > 0 || filters.milestones.length > 0;
 
@@ -148,7 +151,8 @@ export function Sidebar({
         </div>
       </div>
 
-      <div style={{ marginTop: "auto" }}>
+      <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
+        <SyncStatus sources={syncSources} />
         <button
           onClick={onRefresh}
           style={{

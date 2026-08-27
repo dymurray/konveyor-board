@@ -33,6 +33,10 @@ export function getPollInterval(): number {
   return dashboardConfig.polling.intervalMs;
 }
 
+export function getCacheTtl(): number {
+  return dashboardConfig.polling.cacheTtlMs;
+}
+
 export function getReleaseConfig(): ReleaseConfig | null {
   return dashboardConfig.release ?? null;
 }
