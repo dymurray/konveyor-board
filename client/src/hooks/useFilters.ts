@@ -27,7 +27,8 @@ export function useFilters(items: ProjectItem[], defaultMilestone?: string) {
     }
   }, [defaultMilestone]);
 
-  const availableRepos = useMemo(() => [...new Set(items.map((i) => i.repo))].sort(), [items]);
+  // Jira items carry no repo (empty string); drop it so it isn't offered as a filter.
+  const availableRepos = useMemo(() => [...new Set(items.map((i) => i.repo).filter((r) => r.length > 0))].sort(), [items]);
   const availableAssignees = useMemo(
     () => [...new Set(items.flatMap((i) => i.assignees.map((a) => a.login)))].sort(),
     [items],

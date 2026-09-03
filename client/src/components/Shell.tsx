@@ -13,6 +13,7 @@ import { useUpdateItem } from "../hooks/useUpdateItem";
 import { useJiraTickets } from "../hooks/useJiraTickets";
 import { useMilestoneIssues } from "../hooks/useMilestoneIssues";
 import { api } from "../api/client";
+import { jiraToProjectItem } from "../api/jiraAdapter";
 import { getProjectNumber, getPollInterval } from "../api/config";
 import type { ProjectItem, TeamMember, ReleaseConfig, AuthUser } from "../types/project";
 
@@ -62,7 +63,17 @@ export function Shell({ user, onUserChange, onSignOut }: ShellProps) {
     { label: "Jira", sync: jiraSync },
   ], [boardSync, milestoneSync, jiraSync]);
 
-  // Merge board items + milestone items, deduplicate by URL (board version wins — has status)
+  // Adapt Jira tickets into ProjectItems so they flow through the same filters
+  // and views as GitHub items. Assignees are resolved via the team's Jira
+  // account ids; unmapped/unassigned tickets land in the Unassigned bucket.
+  const jiraItems = useMemo(() => {
+    const teamByJiraId = new Map(team.map((m) => [m.jira_account_id, m]));
+    return jiraTickets.map((t) => jiraToProjectItem(t, teamByJiraId, activeJiraSprint));
+  }, [jiraTickets, team, activeJiraSprint]);
+
+  // Merge board items + milestone items + Jira items, deduplicate by URL (board
+  // version wins — has status). Jira items are already scoped by the fetch query
+  // (fixVersion/sprint), so they bypass the GitHub sprint filter below.
   const mergedItems = useMemo(() => {
     let activeBoardItems = boardItems;
     if (releaseFilterActive && currentSprint) {
@@ -70,8 +81,8 @@ export function Shell({ user, onUserChange, onSignOut }: ShellProps) {
     }
     const boardUrls = new Set(activeBoardItems.map((i) => i.url));
     const extraMilestoneItems = milestoneItems.filter((i) => !boardUrls.has(i.url));
-    return [...activeBoardItems, ...extraMilestoneItems];
-  }, [boardItems, milestoneItems, releaseFilterActive, currentSprint]);
+    return [...activeBoardItems, ...extraMilestoneItems, ...jiraItems];
+  }, [boardItems, milestoneItems, jiraItems, releaseFilterActive, currentSprint]);
 
   const {
     filters,
@@ -108,6 +119,12 @@ export function Shell({ user, onUserChange, onSignOut }: ShellProps) {
 
   const handleSelectItem = useCallback(
     (item: ProjectItem) => {
+      // Jira items are read-only here; the DetailPanel is GitHub-specific, so
+      // open the ticket in Jira instead.
+      if (item.source === "jira") {
+        window.open(item.url, "_blank", "noopener");
+        return;
+      }
       const fresh = mergedItems.find((i) => i.id === item.id) ?? item;
       setSelectedItem(fresh);
     },
@@ -265,7 +282,7 @@ export function Shell({ user, onUserChange, onSignOut }: ShellProps) {
           <BoardView items={filteredItems} columns={columns} projectNodeId={projectNodeId} onSelectItem={handleSelectItem} onMoveCard={moveCard} />
         )}
         {view === "list" && <ListView items={filteredItems} columns={columns} onSelectItem={handleSelectItem} />}
-        {view === "engineer" && <EngineerView items={filteredItems} team={team} jiraTickets={jiraTickets} onSelectItem={handleSelectItem} />}
+        {view === "engineer" && <EngineerView items={filteredItems} team={team} onSelectItem={handleSelectItem} />}
       </main>
       {selectedItem && (
         <DetailPanel

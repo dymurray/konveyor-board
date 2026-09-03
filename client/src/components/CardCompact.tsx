@@ -10,7 +10,11 @@ function getInitials(login: string): string {
 }
 
 export function CardCompact({ item, onClick }: CardCompactProps) {
-  const isBug = item.labels.some((l) => l.name.toLowerCase() === "bug" || l.name.toLowerCase() === "kind/bug");
+  const isJira = item.source === "jira";
+  const isCve = isJira && (item.issueType ?? "").toLowerCase() === "vulnerability";
+  const isBug =
+    isCve ||
+    item.labels.some((l) => l.name.toLowerCase() === "bug" || l.name.toLowerCase() === "kind/bug");
 
   return (
     <div
@@ -66,7 +70,13 @@ export function CardCompact({ item, onClick }: CardCompactProps) {
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ fontSize: 10, color: "var(--text-secondary)" }}>
-          <span style={{ color: "var(--accent-blue)" }}>{item.repo}</span> · #{item.number}
+          {isJira ? (
+            <span style={{ color: "var(--accent-blue)" }}>{item.issueId}</span>
+          ) : (
+            <>
+              <span style={{ color: "var(--accent-blue)" }}>{item.repo}</span> · #{item.number}
+            </>
+          )}
         </div>
         {item.assignees.length > 0 && (
           <div style={{ display: "flex", gap: 2 }}>

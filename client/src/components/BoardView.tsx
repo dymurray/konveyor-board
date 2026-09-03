@@ -16,6 +16,10 @@ interface BoardViewProps {
   ) => void;
 }
 
+// Read-only column that collects adapted Jira items (source === "jira"), which
+// have no GitHub board status to sort into. Board moves don't apply to them.
+const JIRA_COLUMN = "🔒 Security / Jira";
+
 export function BoardView({ items, columns, projectNodeId, onSelectItem, onMoveCard }: BoardViewProps) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -25,7 +29,12 @@ export function BoardView({ items, columns, projectNodeId, onSelectItem, onMoveC
   for (const name of columnNames) {
     itemsByColumn.set(name, []);
   }
+  const jiraItems: ProjectItem[] = [];
   for (const item of items) {
+    if (item.source === "jira") {
+      jiraItems.push(item);
+      continue;
+    }
     const col = itemsByColumn.get(item.status);
     if (col) {
       col.push(item);
@@ -44,6 +53,8 @@ export function BoardView({ items, columns, projectNodeId, onSelectItem, onMoveC
 
     const item = items.find((i) => i.id === draggedItemId);
     if (!item || item.status === targetColumn) return;
+    // Jira items are read-only; they have no GitHub status to move.
+    if (item.source === "jira") return;
 
     const col = columns.find((c) => c.name === targetColumn);
     if (!col) return;
@@ -61,6 +72,9 @@ export function BoardView({ items, columns, projectNodeId, onSelectItem, onMoveC
           {columnNames.map((name) => (
             <BoardColumn key={name} columnName={name} items={itemsByColumn.get(name) ?? []} onSelectItem={onSelectItem} />
           ))}
+          {jiraItems.length > 0 && (
+            <BoardColumn columnName={JIRA_COLUMN} items={jiraItems} onSelectItem={onSelectItem} />
+          )}
         </div>
       </DndContext>
     </div>

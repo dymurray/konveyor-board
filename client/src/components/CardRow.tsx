@@ -29,7 +29,7 @@ export function CardRow({ item, selected, onSelect, onToggleCheck, checked }: Ca
         {item.assignees.map((a) => a.login).join(", ") || "—"}
       </td>
       <td style={{ padding: "8px 12px", fontSize: 12 }}>
-        <span style={{ color: "var(--accent-blue)" }}>{item.repo}</span>
+        <span style={{ color: "var(--accent-blue)" }}>{item.source === "jira" ? item.issueId : item.repo}</span>
       </td>
       <td style={{ padding: "8px 12px", fontSize: 11 }}>
         <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>

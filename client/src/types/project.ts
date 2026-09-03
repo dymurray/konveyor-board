@@ -16,6 +16,12 @@ export interface ProjectItem {
   updatedAt: string;
   milestone: string;
   sprint: string;
+  // "jira" for items adapted from a Jira ticket; undefined/"github" for native
+  // GitHub project items. Jira items are read-only (no board moves, no detail
+  // panel) and open their Jira URL when clicked.
+  source?: "github" | "jira";
+  // Jira issue type (e.g. "Vulnerability", "Bug", "Task"). Only set when source === "jira".
+  issueType?: string;
 }
 
 export interface Assignee {
